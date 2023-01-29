@@ -108,7 +108,7 @@ class MyQTreeWidget(QTreeWidget,QWidget):
         
     def setColumns(self, columns: list) -> None:
         for column in columns:
-            self.COLUMN_NAMES.append(column)
+            self.ColumnNames.append(column)
             self.headerItem().setText(columns.index(column),str(column))
 
     def takeTopLevelItem(self, index: int) -> QTreeWidgetItem:
@@ -1053,7 +1053,9 @@ class QSideMenuEnteredLeaved(QWidget):
 
 ## ------------- Custom Thread class
 class MyThread(QThread):
+
     statues = pyqtSignal(str)
+    msg = pyqtSignal(str)
 
     def __init__(self) -> None:
         super().__init__()
@@ -1061,11 +1063,13 @@ class MyThread(QThread):
     def setMainClass(self,mainClass:BaseScrapingClassQt5):
         self.mainClass = mainClass
 
-    def kill(self,msg:typing.Optional[bool]):
+    def kill(self,msg:str):
         """Method to kill Thread when it Running"""
         if self.isRunning():
             self.terminate()
             self.wait()
+        self.msg.emit(msg)
+        self.statues.emit("Stopped")
 
     def start(self, priority: 'QThread.Priority' = ...) -> None:
         """Method to start Thread when it NotRunning"""

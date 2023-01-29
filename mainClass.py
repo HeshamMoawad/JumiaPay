@@ -70,7 +70,7 @@ class JumiaPay(QObject):
         Etisalat = 'Etisalat'
         Orange = 'Orange'
         Noor = 'Noor'
-
+        All = [We,Etisalat,Orange,Noor]
 
     def __init__(self,vendor:str) -> None:
         self.vendor = vendor
@@ -160,7 +160,9 @@ class JumiaPay(QObject):
                 proxy = proxy
         else :
             proxy = {}
+        print(proxy)
         self.header['user-agent']= userAgent
+        print(self.header)
         session.headers = self.header
         session.proxies = proxy
         response = session.post(
@@ -175,7 +177,7 @@ class JumiaPay(QObject):
         
 
     def getRandomUserAgent(self) -> str :
-        return str(self.UserAgentList[random.randint(0,len(self.UserAgentList))])
+        return str(self.UserAgentList[random.randint(0,len(self.UserAgentList))]).replace("\n","")
         
         
     def getRandomProxy(self):
