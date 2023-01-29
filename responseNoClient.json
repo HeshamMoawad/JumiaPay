@@ -1,0 +1,22 @@
+{
+    "code": "INVALID_FIELDS",
+    "response": "No response message",
+    "errors": [
+        {
+            "property": "phone_number",
+            "message": "No response message"
+        }
+    ],
+    "stack_trace": [
+        {
+            "code": "INVALID_FIELDS",
+            "response": "No response message Client error: `POST http:\/\/aman-eg.one.svc.cluster.local\/api\/v1\/formtype\/internet.postpaid.wehome` resulted in a `400 Bad Request` response:\n{\u0022code\u0022:\u0022INVALID_FIELDS\u0022,\u0022response\u0022:\u0022No response message\u0022,\u0022errors\u0022:[{\u0022property\u0022:\u0022phone_number\u0022,\u0022message\u0022:\u0022No response me (truncated...)\n",
+            "errors": [
+                {
+                    "property": "phone_number",
+                    "message": "No response message"
+                }
+            ]
+        }
+    ]
+}

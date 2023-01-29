@@ -1,0 +1,40 @@
+{
+    "code": "SUCCESS",
+    "response": {
+        "service_key": "internet.postpaid.wehome@aman",
+        "elements": [
+            {
+                "key": "bill_info",
+                "label": "Your bill of 133.6 EGP is ready",
+                "options": [],
+                "template": "message",
+                "title": "",
+                "validators": []
+            },
+            {
+                "key": "bill_ref_num",
+                "label": "",
+                "options": [
+                    {
+                        "form_elements": [],
+                        "icon": "",
+                        "label": "bill_ref_num",
+                        "message": "",
+                        "option_value": "8ab55fe6461b2679dd1edaadc55491db:a2063949612819bddfb7714cbf89cc1292ebb2451877db95b776cca5cbdd8f7cb0041b56e4fba008fd862251ac67509a8117cb6f6f9d49aa4e5628bd76ded920cef7d38a3e20cd92b7f29aac18e99e0c2b8f0fc657c9d1aa0452c3f4c60b8415",
+                        "preselected": false
+                    }
+                ],
+                "template": "Hidden",
+                "title": "",
+                "validators": []
+            }
+        ],
+        "step": 2,
+        "step_count": 2,
+        "payload": {
+            "phone_number": "EG_+2034455241",
+            "phone_number_message": "For landline numbers, you must enter the governate code"
+        },
+        "integrity_key": "d7827f6383ddbf97ded405a12db12a5dad37409d"
+    }
+}

@@ -1,0 +1,61 @@
+{
+    "code": "SUCCESS",
+    "response": {
+        "order_details": [
+            {
+                "label": "Internet Provider",
+                "style": "default",
+                "value": "WE-Home",
+                "raw_value": "WE-Home"
+            },
+            {
+                "label": "Phone Number",
+                "style": "default",
+                "value": "+20 2 48047095",
+                "raw_value": "EG_+200248047095"
+            }
+        ],
+        "order_additional_details": [],
+        "payment_details": [
+            {
+                "label": "Service Price",
+                "style": "default",
+                "value": "EGP 136.80",
+                "raw_value": 136.8
+            },
+            {
+                "label": "Jumia Discount",
+                "style": "secondary",
+                "value": "EGP 0.00",
+                "raw_value": 0
+            },
+            {
+                "label": "Service Fee",
+                "style": "default",
+                "value": "EGP 5.00",
+                "raw_value": 5
+            },
+            {
+                "label": "Final Price",
+                "style": "primary",
+                "value": "EGP 141.80",
+                "raw_value": 141.8
+            }
+        ],
+        "payment_methods": [],
+        "headers": {
+            "order_details": {
+                "label": "Your Order"
+            },
+            "order_additional_details": {
+                "label": "Additional Info"
+            },
+            "payment_details": {
+                "label": "Order Summary"
+            },
+            "cta": {
+                "label": "Confirm Payment"
+            }
+        }
+    }
+}
