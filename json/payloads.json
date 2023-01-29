@@ -1,0 +1,210 @@
+{
+    "WE": {
+        "form_segments": [
+            {
+                "service_key": "internet.postpaid.wehome@aman",
+                "elements": [
+                    {
+                        "key": "phone_number_message",
+                        "label": "For landline numbers, you must enter the governate code",
+                        "options": [],
+                        "template": "message",
+                        "title": "",
+                        "validators": []
+                    },
+                    {
+                        "key": "phone_number",
+                        "label": "Phone Number",
+                        "options": [
+                            {
+                                "form_elements": [],
+                                "icon": "",
+                                "label": "Egypt",
+                                "message": "",
+                                "option_value": "EG_+20",
+                                "preselected": false
+                            }
+                        ],
+                        "template": "phone_with_country",
+                        "title": "What is your phone number?",
+                        "validators": [
+                            {
+                                "message": "Phone Number is required",
+                                "options": [],
+                                "type": "required"
+                            },
+                            {
+                                "message": "Invalid phone number",
+                                "options": [],
+                                "type": "phoneNumber"
+                            }
+                        ]
+                    }
+                ],
+                "integrity_key": "19ef610d2e8588e883a3148ba272e0556cc99c25",
+                "payload": [],
+                "step": 1,
+                "step_count": 2
+            }
+        ],
+        "payload": {
+            "phone_number": "EG_+2000000000",
+            "phone_number_message": "For landline numbers, you must enter the governate code"
+        },
+        "service_key": "internet.postpaid.wehome@aman"
+    },
+    "Etisalat": {
+        "service_key": "internet.postpaid.etisalat@aman",
+        "payload": {
+            "phone_number": "EG_+2000000000"
+        },
+        "form_segments": [
+            {
+                "service_key": "internet.postpaid.etisalat@aman",
+                "elements": [
+                    {
+                        "key": "phone_number",
+                        "label": "Phone Number",
+                        "options": [
+                            {
+                                "form_elements": [],
+                                "icon": "",
+                                "label": "Egypt",
+                                "message": "",
+                                "option_value": "EG_+20",
+                                "preselected": false
+                            }
+                        ],
+                        "template": "phone_with_country",
+                        "title": "What is your phone number?",
+                        "validators": [
+                            {
+                                "message": "Phone Number is required",
+                                "options": [],
+                                "type": "required"
+                            },
+                            {
+                                "message": "Invalid phone number",
+                                "options": [],
+                                "type": "phoneNumber"
+                            }
+                        ]
+                    }
+                ],
+                "step": 1,
+                "step_count": 2,
+                "payload": [],
+                "integrity_key": "1d1ae883953a3d6d3dca01523dfa4599b14f29ee"
+            }
+        ]
+    },
+    "Orange": {
+        "service_key": "internet.bill.orangedsl@fawry",
+        "payload": {
+            "phone_number_message": "For landline numbers, you must enter the governate code",
+            "phone_number": "EG_+2000000000"
+        },
+        "form_segments": [
+            {
+                "service_key": "internet.bill.orangedsl@fawry",
+                "elements": [
+                    {
+                        "key": "phone_number_message",
+                        "label": "For landline numbers, you must enter the governate code",
+                        "options": [],
+                        "template": "message",
+                        "title": "",
+                        "validators": []
+                    },
+                    {
+                        "key": "phone_number",
+                        "label": "Phone Number",
+                        "options": [
+                            {
+                                "form_elements": [],
+                                "icon": "",
+                                "label": "Egypt",
+                                "message": "",
+                                "option_value": "EG_+20",
+                                "preselected": false
+                            }
+                        ],
+                        "template": "phone_with_country",
+                        "title": "What is your phone number?",
+                        "validators": [
+                            {
+                                "message": "Phone Number is required",
+                                "options": [],
+                                "type": "required"
+                            },
+                            {
+                                "message": "Invalid phone number",
+                                "options": [],
+                                "type": "phoneNumber"
+                            }
+                        ]
+                    }
+                ],
+                "step": 1,
+                "step_count": 2,
+                "payload": [],
+                "integrity_key": "855ec6a36fb423ffd715860f4bb712aad7c3db27"
+            }
+        ]
+    },
+    
+    "Noor": {
+        "service_key": "internet.bill.nooradsl@fawry",
+        "payload": {
+            "phone_number_message": "For landline numbers, you must enter the governate code",
+            "phone_number": "EG_+2000000000"
+        },
+        "form_segments": [
+            {
+                "service_key": "internet.bill.nooradsl@fawry",
+                "elements": [
+                    {
+                        "key": "phone_number_message",
+                        "label": "For landline numbers, you must enter the governate code",
+                        "options": [],
+                        "template": "message",
+                        "title": "",
+                        "validators": []
+                    },
+                    {
+                        "key": "phone_number",
+                        "label": "Phone Number",
+                        "options": [
+                            {
+                                "form_elements": [],
+                                "icon": "",
+                                "label": "Egypt",
+                                "message": "",
+                                "option_value": "EG_+20",
+                                "preselected": false
+                            }
+                        ],
+                        "template": "phone_with_country",
+                        "title": "What is your phone number?",
+                        "validators": [
+                            {
+                                "message": "Phone Number is required",
+                                "options": [],
+                                "type": "required"
+                            },
+                            {
+                                "message": "Invalid phone number",
+                                "options": [],
+                                "type": "phoneNumber"
+                            }
+                        ]
+                    }
+                ],
+                "step": 1,
+                "step_count": 2,
+                "payload": [],
+                "integrity_key": "0171cda40c088fd6bbb4b9f665a83c5a8596a32c"
+            }
+        ]
+    }
+}
