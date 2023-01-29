@@ -56,7 +56,7 @@ class Ui_MainWindow(object):
         self.label_5 = QtWidgets.QLabel(self.centralwidget)
         self.label_5.setGeometry(QtCore.QRect(260, 100, 165, 31))
         font = QtGui.QFont()
-        font.setPointSize(11)
+        font.setPointSize(8)
         self.label_5.setFont(font)
         self.label_5.setAlignment(QtCore.Qt.AlignCenter)
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
@@ -81,7 +81,7 @@ class Ui_MainWindow(object):
         self.Thread.statues.connect(self.label_5.setText)
         self.Thread.msg.connect(self.msg.showInfo)
         self.pushButton.clicked.connect(self.Thread.start)
-        self.pushButton_2.clicked.connect(self.Thread.kill)
+        self.pushButton_2.clicked.connect(lambda: self.Thread.kill("خلصانة يا ابو الصحاب روح العب بعيد بقاا"))
 
 
         MainWindow.setCentralWidget(self.centralwidget)
@@ -109,7 +109,7 @@ class Ui_MainWindow(object):
         ])
         menu.multiConnect(functions=[
             lambda: self.delete() , # 3
-            lambda: self.export(f"Hour{datetime.datetime.now().hour}Minute{datetime.datetime.now().minute}") , # 4  {datetime.datetime.now().date()} | 
+            lambda: self.export(f"{self.comboBox.currentText()}-Hour{datetime.datetime.now().hour}Minute{datetime.datetime.now().minute}") , # 4  {datetime.datetime.now().date()} | 
             lambda: self.treeWidget.clear() , # 10
         ])
         menu.show()
@@ -137,15 +137,18 @@ class Ui_MainWindow(object):
             filter=file_filter,
             )[0]
         self.lineEdit.setText(dir)
+        
     
     def reshapeExelData(self,excelfile,sheetname):
         wb = openpyxl.load_workbook(excelfile)
         ws = wb[sheetname]
         df = pandas.DataFrame(ws.values)
+        # df.dropna(inplace=True)
         response = []
         for row in df.index:
             res = (f"{df.iloc[row][0]}",f"{df.iloc[row][1]}")
-            response.append(res)
+            if f"{df.iloc[row][0]}" != 'None' :
+                response.append(res)
         return response[1:]
 
 
@@ -165,11 +168,13 @@ class Thread(MyThread):
                 sheetname = "Sheet1" if self.mainClass.lineEdit_3.text() == "" or self.mainClass.lineEdit_3.text() == " " else self.mainClass.lineEdit_3.text()
             )
             listOfPhones = list(set(listOfPhones))
+            print(listOfPhones)
             self.totalNumbers = len(listOfPhones)
             self.Jumia = JumiaPay(self.mainClass.comboBox.currentText())
             self.Jumia.Lead.connect(self.Lead.emit)
+            t1 = time.time()
             for AreaCode,PhoneNumber in listOfPhones:
-                t1 = time.time()
+                
                 print(AreaCode,PhoneNumber)
                 self.statues.emit(f"Searching in {AreaCode}:{PhoneNumber}")
                 self.Jumia.sendRequest(
@@ -177,8 +182,8 @@ class Thread(MyThread):
                     PhoneNumber = PhoneNumber ,
                     userAgent = self.Jumia.Flags.RandomUserAgent, 
                 )
-                self.msleep(100)
-                t2 = time.time()
+                #self.msleep(100)
+            t2 = time.time()
             self.statues.emit("Ending")
             self.msg.emit(f"\n {round(t2-t1,ndigits=4)} Is Total time for make {self.totalNumbers} number \nنورتنا يا رجولة متجيش تانى بقاا ^_-")
     

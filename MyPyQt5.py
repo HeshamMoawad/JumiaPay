@@ -89,13 +89,13 @@ class MyQTreeWidget(QTreeWidget,QWidget):
 
     #################
     def appendDataAsDict(self,items:typing.Optional[dict],Icon:str=None)-> None:
-        #print(items)
+        print(items)
         item_ = QTreeWidgetItem(self)
         item_.setIcon(0,QIcon(Icon)) if Icon != None else None
         for column in self.ColumnNames:
-            self.topLevelItem(self._ROW_INDEX).setText(self.ColumnNames.index(column),items[column])
-            self._ROW_INDEX += 1
-            self.onLengthChanged.emit(self._ROW_INDEX)
+            self.topLevelItem(self._ROW_INDEX).setText(self.ColumnNames.index(column),str(items[column]))
+        self._ROW_INDEX += 1
+        self.onLengthChanged.emit(self._ROW_INDEX)
 
     
     @pyqtProperty(int)

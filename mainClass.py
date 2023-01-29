@@ -3,7 +3,7 @@ from requests import Response
 import pandas as pd
 import threading as thr 
 from MyPyQt5 import QObject , pyqtSignal
-import random,typing ,re,sqlite3,json,requests,openpyxl 
+import random,typing ,re,sqlite3,json,requests,openpyxl,datetime
 
 
 ####################################################
@@ -14,11 +14,8 @@ class DataBaseConnection(object):
         self.cur = self.con.cursor()
 #--------------------------------------------------------------------
     def exist(self,table,value:dict) ->bool :
-        if len(value) > 1 :
-            add = f"AND {value.keys()[1]} = '{value.values()[1]}'"
-        else :
-            add = ""
-        self.cur.execute(f"""SELECT * FROM {table} WHERE {value.keys()[0]} = '{value.values()[0]}' {add}; """)
+        # value = {'PhoneNumber':['PhoneNumber'],'AreaCode':['AreaCode']}
+        self.cur.execute(f"""SELECT * FROM {table} WHERE  PhoneNumber = '{value['PhoneNumber']}' AND AreaCode = '{value['AreaCode']}'; """)
         return True if self.cur.fetchall() != [] else False
     
 #-------------------------------------------------------------------
@@ -172,7 +169,11 @@ class JumiaPay(QObject):
                 PhoneNumber = PhoneNumber ,
             ) ,
         )
-        self.solveResponse(response)
+        self.solveResponse(
+            AreaCode = AreaCode ,
+            PhoneNumber = PhoneNumber ,
+            response = response ,
+            )
         
         
 
@@ -190,23 +191,28 @@ class JumiaPay(QObject):
 
 
     def solveResponse(self,AreaCode:str,PhoneNumber:str,response:Response)-> dict:
-        response = response.json()
+        try:
+            response = response.json()
+        except Exception as e :
+            print(e)
+            print("---"*30)
+            print(response.text)
         Lead = {}
         if response['code'] == self.ResponseStatus.Success :
             if len(response['response']) == self.ResponseLength.Normal:
                 # First Response (Normal)
                 Lead['statusOfResponse'] = response["code"]  # "SUCCESS"
                 Lead['Price'] = response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2] 
-                Lead['AreaCode'] = response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
-                Lead['PhoneNumber'] = response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
+                Lead['AreaCode'] = AreaCode #response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
+                Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
                 Lead['HasUnpaidInvoices'] = str(True)
 
             elif len(response['response']) == self.ResponseLength.Second :
                 # Second Response 
                 Lead['statusOfResponse'] = response["code"] # "SUCCESS"
                 Lead['Price'] = str(response["response"]['payment_details'][0]['raw_value'])
-                Lead['AreaCode'] = response["response"]['order_details'][1]['raw_value'].split("+20")[-1][:2]
-                Lead['PhoneNumber'] = response["response"]['order_details'][1]['raw_value'].split("+20")[-1][2:]
+                Lead['AreaCode'] = AreaCode #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][:2]
+                Lead['PhoneNumber'] = PhoneNumber #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][2:]
                 Lead['HasUnpaidInvoices'] = str(True)
 
         elif response['code'] == self.ResponseStatus.Faild :
@@ -216,11 +222,13 @@ class JumiaPay(QObject):
             Lead['AreaCode'] = AreaCode
             Lead['PhoneNumber'] = PhoneNumber 
             Lead['HasUnpaidInvoices'] = str(False)
-        if not self.Data.exist(self.vendor,**{'PhoneNumber':Lead['PhoneNumber'],'AreaCode':Lead['AreaCode']}):
-            self.Data.addCustomer(
-                vendor = self.vendor ,
-                **Lead
-            )
+
+        #if not self.Data.exist(self.vendor,{'PhoneNumber':Lead['PhoneNumber'],'AreaCode':Lead['AreaCode']}):
+        Lead['DateScraping'] = f"{datetime.datetime.now().date()} |{datetime.datetime.now().hour}:{datetime.datetime.now().minute}"
+        self.Data.addCustomer(
+            vendor = self.vendor ,
+            **Lead
+        )
         self.Lead.emit(Lead)
         return Lead
 
