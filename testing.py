@@ -23,13 +23,13 @@ header = {
             }
 
 proxy = {
-    'http':'http://190.61.88.147:8080',
-    'https':'https://190.61.88.147:8080'
+    'http':'http://127.0.0.1:3000',
+    'https':'https://127.0.0.1:3000'
 
 }
 
-payloadsfile = open("json\payloads.json","r")
-Payloads = json.load(payloadsfile)
+# payloadsfile = open("json\payloads.json","r")
+# Payloads = json.load(payloadsfile)
 
 
 session = requests.Session()

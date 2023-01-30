@@ -174,16 +174,26 @@ class Thread(MyThread):
             self.Jumia = JumiaPay(self.mainClass.comboBox.currentText())
             self.Jumia.Lead.connect(self.Lead.emit)
             t1 = time.time()
+            Proxies = self.Jumia.ProxyAPI.autoAPI()
+            self.Jumia.setPrxies(Proxies = Proxies)
+            loops = 0
             for AreaCode,PhoneNumber in listOfPhones:
-                
+                self.msleep(2000)
+                if loops == 10 :
+                    Proxies = self.Jumia.ProxyAPI.autoAPI()
+                    self.Jumia.setPrxies(Proxies = Proxies)
+                    loops = 0
                 print(AreaCode,PhoneNumber)
                 self.statues.emit(f"Searching in {AreaCode}:{PhoneNumber}")
                 self.Jumia.sendRequest(
                     AreaCode = AreaCode,
                     PhoneNumber = PhoneNumber ,
                     userAgent = self.Jumia.Flags.RandomUserAgent, 
+                    proxy = self.Jumia.Flags.RandomProxy ,
                 )
-                #self.msleep(100)
+                loops =+ 1
+            with open("Errors.txt",'w+') as file :
+                file.writelines(self.Jumia.Errors)
             t2 = time.time()
             self.statues.emit("Ending")
             self.msg.emit(f"\n {round(t2-t1,ndigits=4)} Is Total time for make {self.totalNumbers} number \nنورتنا يا رجولة متجيش تانى بقاا ^_-")

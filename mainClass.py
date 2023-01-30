@@ -4,7 +4,7 @@ import pandas as pd
 import threading as thr 
 from MyPyQt5 import QObject , pyqtSignal
 import random,typing ,re,sqlite3,json,requests,openpyxl,datetime
-
+from ProxyFilterClass import ProxyFilterAPI
 
 ####################################################
 
@@ -48,6 +48,7 @@ class DataBaseConnection(object):
 
 class JumiaPay(QObject):
     Lead = pyqtSignal(dict)
+
     
     DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
     class ResponseStatus():
@@ -126,12 +127,14 @@ class JumiaPay(QObject):
         self.Payloads = json.load(payloadsfile)
         useragentfile = open("user-agents.txt",'r')
         self.UserAgentList =  useragentfile.readlines()
+        self.Proxies = []
+        self.Errors = []
         # ------------- Prapares ----------------
         self.header = self.Headers[self.vendor]
         self.payload = self.Payloads[self.vendor]
         # ------------- Database Connections ------------------
         self.Data = DataBaseConnection()
-    
+        self.ProxyAPI = ProxyFilterAPI()
 
         super().__init__()
 
@@ -175,62 +178,66 @@ class JumiaPay(QObject):
             response = response ,
             )
         
-        
-
     def getRandomUserAgent(self) -> str :
         return str(self.UserAgentList[random.randint(0,len(self.UserAgentList))]).replace("\n","")
         
+    def setPrxies(self,Proxies):
+        self.Proxies = Proxies
         
     def getRandomProxy(self):
-        pass
+        print(len(self.Proxies))
+        return str(self.Proxies[random.randint(0,len(self.Proxies)-1)])
 
     def reshapePayload(self,AreaCode:str,PhoneNumber:str):
         payload = self.payload
         payload['payload']['phone_number'] = f"EG_+20{AreaCode}{PhoneNumber}" # EG_+2035242441  # "EG_+20402917386"
         return payload
 
-
     def solveResponse(self,AreaCode:str,PhoneNumber:str,response:Response)-> dict:
-        try:
-            response = response.json()
-        except Exception as e :
-            print(e)
-            print("---"*30)
-            print(response.text)
-        Lead = {}
-        if response['code'] == self.ResponseStatus.Success :
-            if len(response['response']) == self.ResponseLength.Normal:
-                # First Response (Normal)
-                Lead['statusOfResponse'] = response["code"]  # "SUCCESS"
-                Lead['Price'] = response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2] 
-                Lead['AreaCode'] = AreaCode #response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
-                Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
-                Lead['HasUnpaidInvoices'] = str(True)
+        print("-"*20)
+        # try:
+        #     response = response.json()
+        #     print(response['code']== self.ResponseStatus.Success)
+        #     con = True
+        # except Exception as e :
+        #     con = False
+        if response.status_code == 200 :
+            Lead = {}
+            if response['code'] == self.ResponseStatus.Success :
+                if len(response['response']) == self.ResponseLength.Normal:
+                    # First Response (Normal)
+                    Lead['statusOfResponse'] = response["code"]  # "SUCCESS"
+                    Lead['Price'] = response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2] 
+                    Lead['AreaCode'] = AreaCode #response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
+                    Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
+                    Lead['HasUnpaidInvoices'] = str(True)
 
-            elif len(response['response']) == self.ResponseLength.Second :
-                # Second Response 
-                Lead['statusOfResponse'] = response["code"] # "SUCCESS"
-                Lead['Price'] = str(response["response"]['payment_details'][0]['raw_value'])
-                Lead['AreaCode'] = AreaCode #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][:2]
-                Lead['PhoneNumber'] = PhoneNumber #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][2:]
-                Lead['HasUnpaidInvoices'] = str(True)
+                elif len(response['response']) == self.ResponseLength.Second :
+                    # Second Response 
+                    Lead['statusOfResponse'] = response["code"] # "SUCCESS"
+                    Lead['Price'] = str(response["response"]['payment_details'][0]['raw_value'])
+                    Lead['AreaCode'] = AreaCode #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][:2]
+                    Lead['PhoneNumber'] = PhoneNumber #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][2:]
+                    Lead['HasUnpaidInvoices'] = str(True)
 
-        elif response['code'] == self.ResponseStatus.Faild :
-            # ClientNotFound
-            Lead['statusOfResponse'] = response['code']  # 'INVALID_FIELDS'
-            Lead['Price'] = str(None)
-            Lead['AreaCode'] = AreaCode
-            Lead['PhoneNumber'] = PhoneNumber 
-            Lead['HasUnpaidInvoices'] = str(False)
+            elif response['code'] == self.ResponseStatus.Faild :
+                # ClientNotFound
+                Lead['statusOfResponse'] = response['code']  # 'INVALID_FIELDS'
+                Lead['Price'] = str(None)
+                Lead['AreaCode'] = AreaCode
+                Lead['PhoneNumber'] = PhoneNumber 
+                Lead['HasUnpaidInvoices'] = str(False)
 
-        #if not self.Data.exist(self.vendor,{'PhoneNumber':Lead['PhoneNumber'],'AreaCode':Lead['AreaCode']}):
-        Lead['DateScraping'] = f"{datetime.datetime.now().date()} |{datetime.datetime.now().hour}:{datetime.datetime.now().minute}"
-        self.Data.addCustomer(
-            vendor = self.vendor ,
-            **Lead
-        )
-        self.Lead.emit(Lead)
-        return Lead
+            #if not self.Data.exist(self.vendor,{'PhoneNumber':Lead['PhoneNumber'],'AreaCode':Lead['AreaCode']}):
+            Lead['DateScraping'] = f"{datetime.datetime.now().date()} |{datetime.datetime.now().hour}:{datetime.datetime.now().minute}"
+            self.Data.addCustomer(
+                vendor = self.vendor ,
+                **Lead
+            )
+            self.Lead.emit(Lead)
+            return Lead
+        else:
+            self.Errors.append(f"{AreaCode}{PhoneNumber} Error -----> {response.headers}\n")
 
 
 
