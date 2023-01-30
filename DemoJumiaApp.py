@@ -138,6 +138,7 @@ class Ui_MainWindow(object):
             )[0]
         self.lineEdit.setText(dir)
         
+        
     
     def reshapeExelData(self,excelfile,sheetname):
         wb = openpyxl.load_workbook(excelfile)
