@@ -1,47 +1,30 @@
-from requests import Response
-import pandas as pd
-import threading as thr 
-from MyPyQt5 import QObject , pyqtSignal
-import random,typing ,re,sqlite3,json,requests,openpyxl,datetime
+# import pandas as pd
+# import openpyxl
+
+# wb = openpyxl.load_workbook('yas.xlsx')
+# ws = wb['Sheet1']
+# df = pd.DataFrame(ws.values)
+# df.dropna(inplace=True)
+# h = df[12:]
+# print(h[1:])
 
 
+# response = []
+# for row in df.index:
+#     res = (f"{df.iloc[row][0]}",f"{df.iloc[row][1]}")
+#     if f"{df.iloc[row][0]}" != 'None' :
+#         response.append(res)
+# header = df.loc[0]
+# df.drop(0 , inplace= True)
+# df.columns = header.tolist()
+# code = df[['Code','Number']]
+# Number = df['Number']
 
-
-
-
-url = 'https://httpbin.org/ip' #"https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.postpaid.wehome@aman"
-
-header = {
-                'accept': 'application/json, text/plain, */*',
-                'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'en',
-                'content-length': '890',
-                'content-type': 'application/json;charset=UTF-8',
-                'origin': 'https://pay.jumia.com.eg',
-                'referer': 'https://pay.jumia.com.eg/services/internet-bills',
-                'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.117 Mobile Safari/537.36',
-            }
-
-proxy = {
-    'http':'http://127.0.0.1:3000',
-    'https':'https://127.0.0.1:3000'
-
-}
-
-# payloadsfile = open("json\payloads.json","r")
-# Payloads = json.load(payloadsfile)
-
-
-session = requests.Session()
-session.proxies = proxy 
-response = session.get(
-    url = url ,
-
-)
-
-
-print(response.status_code)
-print(response.text)
+# # print(df)
+# # print(header)
+# print(code)
+# code['Numbersss'] = Number.to_list()
+# print(code)
 
 
 

@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
         self.label_4 = QtWidgets.QLabel(self.centralwidget)
         self.treeWidget = MyQTreeWidget(self.centralwidget,counterLabel=self.label_4)
         self.treeWidget.setGeometry(QtCore.QRect(10, 150, 651, 361))
-        self.treeWidget.setColumns(['AreaCode','PhoneNumber','HasUnpaidInvoices','Price'])
+        self.treeWidget.setColumns(['AreaCode','PhoneNumber','HasUnpaidInvoices','Price','TimeScraping'])
         self.treeWidget.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.treeWidget.customContextMenuRequested.connect(self.contextMenu)
         self.toolButton = QtWidgets.QToolButton(self.centralwidget)
@@ -178,7 +178,9 @@ class Thread(MyThread):
             self.Jumia.setPrxies(Proxies = Proxies)
             loops = 0
             for AreaCode,PhoneNumber in listOfPhones:
+                print(f"sleeping 2s ")
                 self.msleep(2000)
+                print(f"--------- Ali sholkamy")
                 if loops == 10 :
                     Proxies = self.Jumia.ProxyAPI.autoAPI()
                     self.Jumia.setPrxies(Proxies = Proxies)

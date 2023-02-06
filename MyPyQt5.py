@@ -50,6 +50,14 @@ class MyQTreeWidget(QTreeWidget,QWidget):
             self.df[self.COLUMN_NAMES[col_index]] = col_vals
         return self.df
 
+    def getCustomDataFrame(self,values:dict)-> pandas.DataFrame:
+        re = []
+        df = self.extract_data_to_DataFrame()
+        for key , value in values.items():
+            if value != None :
+                re.append(key)
+        return df[re] 
+
     def extract_data_to_list(self,index_of_column)->list:
         return self.extract_data_to_DataFrame()[self.COLUMN_NAMES[index_of_column]].to_list()
     
@@ -561,6 +569,7 @@ class MyQMainWindow(QMainWindow):
     Entered = pyqtSignal()
     ShowSignal = pyqtSignal()
     MessageBox = MyMessageBox()
+    msg = MyMessageBox()
     
     
     def __init__(self) -> None:
@@ -1060,9 +1069,6 @@ class MyThread(QThread):
     def __init__(self) -> None:
         super().__init__()
         
-    def setMainClass(self,mainClass:BaseScrapingClassQt5):
-        self.mainClass = mainClass
-
     def kill(self,msg:str):
         """Method to kill Thread when it Running"""
         if self.isRunning():
