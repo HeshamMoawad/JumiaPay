@@ -1,7 +1,6 @@
 # from requests.sessions import default_headers
 from requests import Response
 import pandas as pd
-import threading as thr 
 from MyPyQt5 import QObject , pyqtSignal
 import random,typing ,sqlite3,json,requests,openpyxl,datetime,pandas
 from ProxyFilterClass import ProxyFilterAPI
