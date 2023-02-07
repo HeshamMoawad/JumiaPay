@@ -7,6 +7,33 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from mainClass import JumiaPay
 import pyperclip , typing 
 from datetime import datetime
+from styles import Styles
+####################################################
+
+# MIT License
+
+# Copyright (c) 2023 HeshamMoawad
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+####################################################
+
 
 
 
@@ -31,6 +58,7 @@ class Page1(QObject):
         self.exportNamelabel.setAlignment(QtCore.Qt.AlignCenter)
         self.horizontalLayout_3.addWidget(self.exportNamelabel)
         self.lineEditExportName = QtWidgets.QLineEdit(self.frame_3)
+        self.lineEditExportName.setPlaceholderText("Enter Name That will Export")
         self.horizontalLayout_3.addWidget(self.lineEditExportName)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_3.addItem(spacerItem)
@@ -73,9 +101,14 @@ class Page1(QObject):
         self.counterlabel.setText("Counter: 0")
         self.treeWidget = MyQTreeWidget(self.frame,counterLabel=self.counterlabel)
         self.treeWidget.setColumns(['AreaCode','PhoneNumber','HasUnpaidInvoices','Server Message','Price','TimeScraping'])
-        self.treeWidget.appendDataAsList(['1','2','3','4','5','6'])
         self.treeWidget.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.treeWidget.customContextMenuRequested.connect(self.menu)
+        self.treeWidget.setColumnWidth(0,70)
+        self.treeWidget.setColumnWidth(1,100)
+        self.treeWidget.setColumnWidth(2,130)
+        self.treeWidget.setColumnWidth(3,130)
+        self.treeWidget.setColumnWidth(4,40)
+        self.treeWidget.setColumnWidth(5,80)
         self.verticalLayout.addWidget(self.treeWidget)
         self.trecounterFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.trecounterFrame.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -157,13 +190,14 @@ class Page2(QObject):
         self.settingGroupBox = QtWidgets.QGroupBox(self.frame)
         self.settingGroupBox.setTitle('Setting')
         self.VertSetting = QtWidgets.QVBoxLayout(self.settingGroupBox)
-        self.VertSetting.setContentsMargins(0, 0, -1, 0)
+        self.VertSetting.setContentsMargins(3, 3, 3, 3)
         self.dirFrame = QtWidgets.QFrame(self.settingGroupBox)
         self.horizontalLayout_15 = QtWidgets.QHBoxLayout(self.dirFrame)
         self.directorylabel = QtWidgets.QLabel(self.dirFrame)
         self.directorylabel.setText('File Directory')
         self.horizontalLayout_15.addWidget(self.directorylabel, 0, QtCore.Qt.AlignHCenter)
         self.lineEditDirectory = QtWidgets.QLineEdit(self.dirFrame)
+        self.lineEditDirectory.setPlaceholderText("File Directory Here ")
         self.lineEditDirectory.setReadOnly(True)
         self.horizontalLayout_15.addWidget(self.lineEditDirectory)
         self.toolButton = QtWidgets.QToolButton(self.dirFrame)
@@ -234,6 +268,7 @@ class Page2(QObject):
         self.randproxylabel.setText('Random Proxy')
         self.horizontalLayout_3.addWidget(self.randproxylabel, 0, QtCore.Qt.AlignHCenter)
         self.proxytoggle = AnimatedToggle(self.frame_4)
+        self.proxytoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.proxytoggle.setSizePolicy(sizePolicy)
         self.horizontalLayout_3.addWidget(self.proxytoggle)
@@ -246,6 +281,7 @@ class Page2(QObject):
         self.randUseragentlabel.setText('Random User-Agent')
         self.horizontalLayout_4.addWidget(self.randUseragentlabel, 0, QtCore.Qt.AlignHCenter)
         self.randUseragenttoggle = AnimatedToggle(self.frame_5)
+        self.randUseragenttoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.randUseragenttoggle.setSizePolicy(sizePolicy)
         self.horizontalLayout_4.addWidget(self.randUseragenttoggle)
@@ -257,7 +293,7 @@ class Page2(QObject):
         self.optionGroupbox = QtWidgets.QGroupBox(self.frame)
         self.optionGroupbox.setTitle("Export Options")
         self.VertExportOption = QtWidgets.QVBoxLayout(self.optionGroupbox)
-        self.VertExportOption.setContentsMargins(0, 0, 0, 0)
+        self.VertExportOption.setContentsMargins(3, 3, 3, 3)
         self.opFirstFrame = QtWidgets.QFrame(self.optionGroupbox)
         self.opFirstFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.opFirstFrame.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -271,6 +307,7 @@ class Page2(QObject):
         self.areCodelabel.setText('AreaCode')
         self.horizontalLayout_6.addWidget(self.areCodelabel, 0, QtCore.Qt.AlignHCenter)
         self.areaCodetoggle = AnimatedToggle(self.areaCodeFrame)
+        self.areaCodetoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         self.areaCodetoggle.stateChanged.connect(self.exportrange)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.areaCodetoggle.setSizePolicy(sizePolicy)
@@ -286,6 +323,7 @@ class Page2(QObject):
         self.phonelabel.setText('PhoneNumber')
         self.horizontalLayout_7.addWidget(self.phonelabel, 0, QtCore.Qt.AlignHCenter)
         self.phonetoggle = AnimatedToggle(self.phoneFrame)
+        self.phonetoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         self.phonetoggle.stateChanged.connect(self.exportrange)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.phonetoggle.setSizePolicy(sizePolicy)
@@ -308,6 +346,7 @@ class Page2(QObject):
         self.hasInvolabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.horizontalLayout_5.addWidget(self.hasInvolabel)
         self.hasInvotoggle = AnimatedToggle(self.hasInvoFrame)
+        self.hasInvotoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         self.hasInvotoggle.stateChanged.connect(self.exportrange)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.hasInvotoggle.setSizePolicy(sizePolicy)
@@ -323,6 +362,7 @@ class Page2(QObject):
         self.serverMsglabel.setText("Server Message")
         self.horizontalLayout_11.addWidget(self.serverMsglabel, 0, QtCore.Qt.AlignHCenter)
         self.serverMsgtoggle = AnimatedToggle(self.serverMsgFrame)
+        self.serverMsgtoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         self.serverMsgtoggle.stateChanged.connect(self.exportrange)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.serverMsgtoggle.setSizePolicy(sizePolicy)
@@ -344,6 +384,7 @@ class Page2(QObject):
         self.pricelabel.setText('Price')
         self.horizontalLayout_8.addWidget(self.pricelabel, 0, QtCore.Qt.AlignHCenter)
         self.pricetoggle = AnimatedToggle(self.PriceFrame)
+        self.pricetoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         self.pricetoggle.stateChanged.connect(self.exportrange)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.pricetoggle.setSizePolicy(sizePolicy)
@@ -359,6 +400,7 @@ class Page2(QObject):
         self.timeScrapinglabel.setText('TimeScraping')
         self.horizontalLayout_9.addWidget(self.timeScrapinglabel, 0, QtCore.Qt.AlignHCenter)
         self.timeScrapingtoggle = AnimatedToggle(self.timeScrapingFrame)
+        self.timeScrapingtoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
         self.timeScrapingtoggle.stateChanged.connect(self.exportrange)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
         self.timeScrapingtoggle.setSizePolicy(sizePolicy)
@@ -367,6 +409,7 @@ class Page2(QObject):
         self.horizontalLayout_9.setStretch(1, 2)
         self.horizontalLayout_14.addWidget(self.timeScrapingFrame)
         self.VertExportOption.addWidget(self.opThirdFrame)
+        self.optionGroupbox.setFixedHeight(210)
         self.verticalLayout_4.addWidget(self.optionGroupbox)
         self.verticalLayout_4.setStretch(0,3)
         self.verticalLayout_4.setStretch(1,1)
