@@ -27,7 +27,6 @@ Simple App to Scrape Data From JumiaPay Website and Check if Phone Number has In
 
 ## Built With Package
 
-* Python
 * Requests
 * Json
 * Openpyxl
@@ -46,9 +45,9 @@ Simple App to Scrape Data From JumiaPay Website and Check if Phone Number has In
 
 ## Contact 
 
-* [Gmail] : HeshamMoawad120120@gmail.com
-* [WhatsApp] : 01111141853
+* Gmail : HeshamMoawad120120@gmail.com
+* WhatsApp : 01111141853
 
 
-# Good Luck 
-## Made By K7_Team Hesham
+#### Good Luck if you want any help Contact Me
+# Made By K7_Team Hesham
