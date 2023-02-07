@@ -5,7 +5,7 @@ Simple App to Scrape Data From JumiaPay Website and Check if Phone Number has In
 
 ## Pages
 
-* DashBoard --> To Scrape Handles From Telegram Group 
+* DashBoard --> To Start Task and Export Result 
 * Setting --> To Manage SendRequest and Expot Options
 
 # Features 
