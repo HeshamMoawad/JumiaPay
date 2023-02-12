@@ -61,6 +61,7 @@ class Window (MyQMainWindow):
         self.setFrameLess()
         self.resize(650,500)
         self.setStyleSheet(Styles().main)
+        self.setAppIcon('Data\Icons\icons8-j-48.ico')
         self.Menu = QSideMenuEnteredLeaved(
             parent = self.mainWidget ,
             Title = f"Welcome {self.Name if self.Name != 'K7Hesham' else 'Admin'}" ,
@@ -76,6 +77,7 @@ class Window (MyQMainWindow):
             MiniButtonIconPath = "Data\Icons\delete.png",
 
         )
+
         self.DashBoardBtn = self.Menu.getButton(0)
         self.DashBoardBtn.setTexts(entred=' DashBoard',leaved='')
         self.DashBoardBtn.setIcon(QIcon('Data\Icons\dashboard.png'))
