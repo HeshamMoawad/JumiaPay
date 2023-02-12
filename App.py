@@ -1,17 +1,19 @@
 from pages import Page1,Page2
-from MyPyQt5 import (MyQMainWindow , 
-                    QSideMenuEnteredLeaved , 
-                    QIcon , 
-                    QSize ,
-                    MyThread ,
-                    pyqtSignal ,
-                    QShortcut ,
-                    QKeySequence
-                    
+from MyPyQt5 import (
+
+                MyQMainWindow , 
+                QSideMenuEnteredLeaved , 
+                QIcon , 
+                QSize ,
+                MyThread ,
+                pyqtSignal ,
+                QShortcut ,
+                QKeySequence ,
+
                     )
 import openpyxl
 import pandas
-from mainClass import JumiaPay
+from mainClass import JumiaPay 
 import time
 from styles import Styles
 
@@ -39,6 +41,12 @@ from styles import Styles
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+# Contact Me 
+# GitHub : github.com/HeshamMoawad
+# Gmail : HeshamMoawad120120@gmail.com
+# Whatsapp : +201111141853
+
 ####################################################
 
 
@@ -77,17 +85,10 @@ class Window (MyQMainWindow):
         self.SettingBtn.setIconSize(QSize(30,30))
         self.SettingBtn.setTexts(entred=' Setting',leaved='')
         self.DashBoard = Page1(self.Menu.getPage(0))
-        self.DashBoard
         self.Setting = Page2(self.Menu.getPage(1))
         self.Setting.ExportRangeSignal.connect(self.DashBoard.setExportRange)
-        self.Menu.connect_Button_Page(
-            btn = self.DashBoardBtn ,
-            pageIndex = 0
-        )
-        self.Menu.connect_Button_Page(
-            btn = self.SettingBtn ,
-            pageIndex = 1
-        )
+        self.Menu.connect_Button_Page(btn = self.DashBoardBtn ,pageIndex = 0)
+        self.Menu.connect_Button_Page(btn = self.SettingBtn ,pageIndex = 1)
         # Thread Part ------
         self.WorkingThread = WorkingThread()
         self.WorkingThread.setMainClass(self)
@@ -102,9 +103,9 @@ class Window (MyQMainWindow):
         self.clear = QShortcut(QKeySequence("ctrl+r"),self)
         self.clear.activated.connect(lambda: self.updateWaitingDF(df=pandas.DataFrame() , clear=True))
 
-
-
         return super().SetupUi()
+
+
 
     def updateWaitingDF(self,df:pandas.DataFrame ,clear:bool=False):
         self.dataframe = df
@@ -118,6 +119,8 @@ class Window (MyQMainWindow):
         ws = wb[sheetname]
         df = pandas.DataFrame(ws.values)
         df.dropna(inplace=True)
+        df[df.columns[0]].apply(str)
+        df[df.columns[1]].apply(str)
         df = df[1:]
         self.updateWaitingDF(df)
 

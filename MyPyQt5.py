@@ -1,21 +1,20 @@
 import typing , sys
 import pandas , sqlite3
 from PyQt5.QtCore import (QCoreApplication, QEasingCurve, QPoint, QPointF, QEvent ,
-                          QPropertyAnimation, QRect, QRectF, QObject ,
-                          QSequentialAnimationGroup, QSize, Qt, pyqtProperty,
-                          pyqtSignal, pyqtSlot , QThread)
+                          QPropertyAnimation , QRectF, QObject ,
+                          QSequentialAnimationGroup , QSize, Qt, pyqtProperty,
+                          pyqtSignal, pyqtSlot , QThread )
 from PyQt5.QtGui import * 
 from PyQt5.QtWidgets import *
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import  NoSuchElementException
 from MyPyQt5 import QThread,QObject,pyqtSignal
-import typing , time , sqlite3 , datetime , os
+import typing , time , sqlite3 , os
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -44,6 +43,11 @@ from styles import Styles
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+# Contact Me 
+# GitHub : github.com/HeshamMoawad
+# Gmail : HeshamMoawad120120@gmail.com
+# Whatsapp : +201111141853
 
 ####################################################
 
@@ -308,194 +312,6 @@ class AnimatedToggle(QCheckBox):
     def pulse_radius(self, pos):
         self._pulse_radius = pos
         self.update()
-
-
-
-class QSideMenuNewStyle(QWidget):
-    def __init__(
-            self,
-            parent:QWidget,
-            ButtonsCount:int = 2,
-            PagesCount:int = 2 ,
-            ButtonsSpacing:int = 3 ,
-            Duration:int = 400 ,
-            DefultIconPath:str = None ,
-            ClickIconPath:str = None ,  
-            StretchMenuForStacked:tuple=(1,5) ,
-            StretchTopForBottomFrame:tuple = (1,6),
-            ButtonsFrameFixedwidth:int=None,
-            TopFrameFixedHight:int= 40,
-            ExitButtonIconPath:str=None ,
-            ButtonsFixedHight:int=None , 
-            MaxButtonIconPath:str = None ,
-            Mini_MaxButtonIconPath:str = None ,
-            MiniButtonIconPath:str = None,
-            **kwargs,
-
-        ) -> None:
-        super().__init__(parent)
-
-        self.DefultIconPath = DefultIconPath
-        self.ClickIconPath = ClickIconPath
-        self.verticalLayout = QVBoxLayout(parent)
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout.setSpacing(0)
-        self.TopFrame = MyQFrame(parent,Draggable=True)
-        self.TopFrame.setFixedHeight(TopFrameFixedHight) if TopFrameFixedHight != None else None
-        self.TopFrame.setStyleSheet("background-color:transparent;")
-        self.horizontalLayout_2 = QHBoxLayout(self.TopFrame)
-        self.MenuButton = QPushButton(self.TopFrame , text=" Menu")
-        # self.MenuButton.setStyleSheet(Styles.BUTTON)
-        self.MenuButton.setFlat(True)
-        self.MenuButton.setShortcut("Ctrl+m")
-        self.MenuButton.setFixedHeight(self.TopFrame.height()-15)
-        self.MenuButton.setFixedWidth(50)
-        self.horizontalLayout_2.addWidget(self.MenuButton, 1, Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
-        self.MainLabel = QLabel(self.TopFrame)
-        self.MainLabel.setText("Statues")
-        self.horizontalLayout_2.addWidget(self.MainLabel, 4 ,Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignCenter)
-        self.MiniButton = QPushButton(self.TopFrame)
-        self.MiniButton.setFlat(True)
-        self.MiniButton.setFixedSize(QSize(20,20))
-        self.MiniButton.setIcon(QIcon(MiniButtonIconPath)) if MiniButtonIconPath != None else None
-        self.horizontalLayout_2.addWidget(self.MiniButton, 0,Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
-        self.MiniButton.clicked.connect(parent.parent().showMinimized)
-        self.MaxButton = QPushButton(self.TopFrame)
-        self.MaxButton.setFlat(True)
-        self.MaxButton.setFixedSize(QSize(20,20))
-        self.MaxButton.setIcon(QIcon(MaxButtonIconPath)) if MaxButtonIconPath != None else None
-        self.MaxButton.clicked.connect(lambda : self.max_mini(self.parent().parent(),MaxButtonIconPath,Mini_MaxButtonIconPath,ButtonsFrameFixedwidth))
-        self.horizontalLayout_2.addWidget(self.MaxButton, 0,Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
-        self.ExitButton = QPushButton(self.TopFrame)        
-        self.ExitButton.setFlat(True)
-        self.ExitButton.setFixedSize(QSize(20,20))
-        self.ExitButton.setIconSize(QSize(20,20))
-        self.ExitButton.setIcon(QIcon(ExitButtonIconPath)) if ExitButtonIconPath != None else None
-        self.ExitButton.clicked.connect(parent.close)
-        self.ExitButton.clicked.connect(QCoreApplication.instance().quit)        
-        self.horizontalLayout_2.addWidget(self.ExitButton, 0, Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
-        self.horizontalLayout_2.setContentsMargins(5,5,6,5)
-        self.verticalLayout.addWidget(self.TopFrame)
-        self.BottomFrame = MyQFrame(parent)
-        self.BottomFrame.setStyleSheet("background-color:transparent;")
-        self.horizontalLayout = QHBoxLayout(self.BottomFrame)
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.horizontalLayout.setSpacing(0)
-        self.ButtonsFrame = MyQFrame(self.BottomFrame)
-        self.ButtonsFrame.setStyleSheet("background-color:transparent;")
-        self.ButtonsFrame.setFixedWidth(ButtonsFrameFixedwidth) if ButtonsFrameFixedwidth != None else None
-        self.verticalLayout_2 = QVBoxLayout(self.ButtonsFrame)
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.verticalLayout_2.setSpacing(ButtonsSpacing)
-        self.Buttons = [] #ButtonsList
-        for index in range(ButtonsCount) :
-            Button = QPushButton(self.ButtonsFrame , text=f"Button {index}")
-            sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-            sizePolicy.setHeightForWidth(Button.sizePolicy().hasHeightForWidth())
-            Button.setFixedHeight(ButtonsFixedHight) if ButtonsFixedHight != None else None
-            Button.setSizePolicy(sizePolicy)
-            if index == ButtonsCount - 1 :
-                self.verticalLayout_2.addWidget(Button ,1, Qt.AlignmentFlag.AlignTop)
-            else :
-                self.verticalLayout_2.addWidget(Button ,0, Qt.AlignmentFlag.AlignTop)
-            Button.setFlat(True)
-            self.Buttons.append(Button)
-        self.HideLabel = QLabel(self.ButtonsFrame)
-        self.HideLabel.setText("Hide Browser")
-        self.verticalLayout_2.addWidget(self.HideLabel,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
-        self.Hidetoggle = AnimatedToggle(self.ButtonsFrame)
-        self.Hidetoggle.setShortcut("Ctrl+h")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.Hidetoggle.setSizePolicy(sizePolicy)
-        self.verticalLayout_2.addWidget(self.Hidetoggle,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
-        self.DarkModeLabel = QLabel(self.ButtonsFrame)
-        self.DarkModeLabel.setText("Dark~Mode")
-        self.verticalLayout_2.addWidget(self.DarkModeLabel,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
-        self.DarkModetoggle = AnimatedToggle(self.ButtonsFrame)
-        self.DarkModetoggle.setShortcut("Ctrl+d")
-        # self.DarkModetoggle.setCheckedColor("#c21919")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.DarkModetoggle.setSizePolicy(sizePolicy)
-        self.verticalLayout_2.addWidget(self.DarkModetoggle,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
-        self.horizontalLayout.addWidget(self.ButtonsFrame)
-        self.stackedWidget = QStackedWidget(self.BottomFrame)
-        self.Pages = []
-        for Page in range(PagesCount):
-            Page = QWidget()
-            self.stackedWidget.addWidget(Page)
-            self.Pages.append(Page)
-
-        self.horizontalLayout.addWidget(self.stackedWidget)
-        self.horizontalLayout.setStretch(0 , StretchMenuForStacked[0])
-        self.horizontalLayout.setStretch(1, StretchMenuForStacked[1])
-        self.verticalLayout.addWidget(self.BottomFrame)
-        self.verticalLayout.setStretch(0 ,StretchTopForBottomFrame[0])
-        self.verticalLayout.setStretch(1 , StretchTopForBottomFrame[1])
-        self.MAXWIDTH = self.ButtonsFrame.width()
-        self.NORMALWIDTH = self.MAXWIDTH
-        self.Animation = QPropertyAnimation(self,b"Width",self)
-        self.Animation.setDuration(Duration)
-        self.MenuButton.setIcon(QIcon(DefultIconPath)) if DefultIconPath != None else None
-        self.MenuButton.clicked.connect(self.MenuClick)
-        self.ButtonsFrame.setFixedWidth(0)
-        self.setCurrentPage(0)
-    
-
-    @pyqtProperty(int)
-    def Width(self):
-        return self.ButtonsFrame.width()
-    
-    @Width.setter
-    def Width(self,val):
-        self.ButtonsFrame.setFixedWidth(val)
-        
-    def MenuClick(self)-> None:
-        if self.ButtonsFrame.width() == self.MAXWIDTH :
-            self.MenuButton.setIcon(QIcon(self.DefultIconPath)) if self.DefultIconPath != None else None
-            self.Animation.setStartValue(0)
-            self.Animation.setEndValue(self.MAXWIDTH)
-            self.Animation.setDirection(self.Animation.Direction.Backward)
-            self.Animation.start()
-
-        elif self.ButtonsFrame.width() != self.MAXWIDTH :
-            self.Animation.setStartValue(0)
-            self.Animation.setEndValue(self.MAXWIDTH)
-            self.MenuButton.setIcon(QIcon(self.ClickIconPath)) if self.ClickIconPath != None else None
-            self.Animation.setDirection(self.Animation.Direction.Forward)
-            self.Animation.start()
-
-    @pyqtSlot(int,str)
-    def setButtonText(self,index:int,text:str)-> None:
-        self.Buttons[index].setText(text)
-
-    @pyqtSlot(int,str)
-    def setButtonIcon(self,index:int,IconPath:str)-> None:
-        self.Buttons[index].setIcon(QIcon(IconPath))
-        
-    def Connections(self,index:int,func):
-        self.Buttons[index].clicked.connect(func)
-
-    def GetButton(self,index:int)-> QPushButton:
-        return self.Buttons[index]
-
-    def GetPage(self,index:int)-> QWidget:
-        return self.Pages[index]
-
-    @pyqtSlot(int)
-    def setCurrentPage(self,index:int):
-        self.stackedWidget.setCurrentIndex(index)
-
-    def max_mini(self , parent:QMainWindow , path1:str , path2:str , Fixedwidth):
-        if parent.isMaximized():
-            parent.showNormal()
-            self.MaxButton.setIcon(QIcon(path1))
-            self.MAXWIDTH = self.NORMALWIDTH
-        else :
-            parent.showMaximized()
-            self.MaxButton.setIcon(QIcon(path2))
-            self.MAXWIDTH = Fixedwidth + 150 if Fixedwidth is int else 200
-
-
 
 
 
@@ -959,6 +775,9 @@ class QSideMenuEnteredLeaved(QWidget):
         self.verticalLayout_2 = QVBoxLayout(self.ButtonsFrame)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2.setSpacing(ButtonsSpacing)
+        self.MaxButton.setStyleSheet(Styles.PushButton.Normal)
+        self.ExitButton.setStyleSheet(Styles.PushButton.Normal)
+        self.MiniButton.setStyleSheet(Styles.PushButton.Normal)
         for index in range(ButtonsCount) :
             Button = MyQToolButton(self.ButtonsFrame)
             Button.setTexts(f'{index}',f"Button {index}") 

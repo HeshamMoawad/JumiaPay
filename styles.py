@@ -22,16 +22,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
+# Contact Me 
+# GitHub : github.com/HeshamMoawad
+# Gmail : HeshamMoawad120120@gmail.com
+# Whatsapp : +201111141853
+
 ####################################################
 
 
 class Styles():
 
-
     @property
     def main(self):
         return self.Widget.Normal + self.LineEdit.Normal + self.ComboBox.Normal + self.SpinBox.Normal + self.PushButton.Normal #  + self.GroupBox.Normal
-
 
     class Colors():
         Orange = "rgb(255, 112, 16)"
@@ -101,6 +105,14 @@ class Styles():
             border-radius:6px;
         }
         QToolButton:hover{
+            background-color:darkgray;
+            color:black;
+        }
+        QPushButton{
+            background-color:transparent;
+            border-radius:6px;
+        }
+        QPushButton:hover{
             background-color:darkgray;
             color:black;
         }

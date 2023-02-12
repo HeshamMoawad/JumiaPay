@@ -32,6 +32,11 @@ from styles import Styles
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# Contact Me 
+# GitHub : github.com/HeshamMoawad
+# Gmail : HeshamMoawad120120@gmail.com
+# Whatsapp : +201111141853
+
 ####################################################
 
 
@@ -238,7 +243,7 @@ class Page2(QObject):
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2.addWidget(self.timeRequestlabel)#, 0, QtCore.Qt.AlignHCenter
         self.timeRequestspinbox = QtWidgets.QSpinBox(self.timeRequestlabel)
-        self.timeRequestspinbox.setMinimum(1)
+        self.timeRequestspinbox.setMinimum(0)
         self.timeRequestspinbox.setMaximum(1000)
         self.timeRequestspinbox.setValue(4)
         self.horizontalLayout_2.addWidget(self.timeRequestspinbox)
