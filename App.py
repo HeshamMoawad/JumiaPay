@@ -116,6 +116,7 @@ class Window (MyQMainWindow):
             self.dataframe = pandas.DataFrame()
             self.DashBoard.updateWaiting(0)
 
+
     def reshapeExelData(self,excelfile,sheetname):
         wb = openpyxl.load_workbook(excelfile)
         ws = wb[sheetname]
@@ -182,16 +183,16 @@ class WorkingThread(MyThread):
                     self.statues.emit(f"will sleeping for {sleeping}")
                     self.sleep(sleeping)
                     self.statues.emit(f"Request for +2{AreaCode}{PhoneNumber}")
-                    # try:
-                    self.Jumia.sendRequest(
-                        AreaCode = AreaCode,
-                        PhoneNumber = PhoneNumber ,
-                        userAgent = self.Jumia.Flags.RandomUserAgent if useuseragent else None, 
-                        proxy = self.Jumia.Flags.RandomProxy if useproxies else None,
-                    )
-                    # except Exception as e :
-                    #     print(f"{AreaCode+PhoneNumber} -> {e}")
-                    #     self.Jumia.Errors.append(f"{AreaCode+PhoneNumber} -> {e}")
+                    try:
+                        self.Jumia.sendRequest(
+                            AreaCode = AreaCode,
+                            PhoneNumber = PhoneNumber ,
+                            userAgent = self.Jumia.Flags.RandomUserAgent if useuseragent else None, 
+                            proxy = self.Jumia.Flags.RandomProxy if useproxies else None,
+                        )
+                    except Exception as e :
+                        print(f"{AreaCode+PhoneNumber} -> {e}")
+                        self.Jumia.Errors.append(f"{AreaCode+PhoneNumber} -> {e}")
                     waiting -= 1
                     self.WaitingSignal.emit(waiting)
                     dataframe = dataframe[1:]
@@ -204,7 +205,7 @@ class WorkingThread(MyThread):
                     self.statues.emit("Ending")
                     self.msg.emit(f"\n {round(t2-t1,ndigits=2)} Is Total time for make {totalnumbers} number \nنورتنا يا رجولة متجيش تانى بقاا ^_-")
         except Exception as e :
-            print(f"Error in {e}={e.with_traceback()}\nPlease Contact Hesham")
+            print(f"Error in {e}\nPlease Contact Hesham")
             self.msg.emit(f"Error in {e}\nPlease Contact Hesham")
 
     def stopping(self,stop:bool):
