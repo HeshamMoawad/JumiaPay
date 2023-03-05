@@ -76,7 +76,15 @@ class LeadObjectFirst(object):
         self.DateScraping = self.Date.getCurrentDate()
         self.goNext = True
         self.statusOfResponse = Response["code"]  # "SUCCESS"
-        self.Price = Response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2]
+        try:
+            self.Price = Response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2]
+        except Exception as e :
+            try:
+                self.Price = Response["response"]["elements"][0]["label"]
+                print(f"error in and fixed  {e} with response {self.Price}")
+            except Exception as e :
+                print(f"error in {e} with response {self.Response}")
+                self.Price = "can't get Price"
         self.ServerMsg = Response["response"]["elements"][0]["label"]
         self.AreaCode = Response['AreaCode']
         self.PhoneNumber = Response['PhoneNumber']
