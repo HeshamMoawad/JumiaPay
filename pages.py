@@ -1,4 +1,4 @@
-from MyPyQt5 import (AnimatedToggle,MyMessageBox,
+from Packages import (AnimatedToggle,MyMessageBox,
     MyCustomContextMenu,MyQTreeWidget, QObject ,
     pyqtSignal
     )
@@ -52,7 +52,11 @@ class Page1(QObject):
     msg = MyMessageBox()
     def __init__(self,parent:QObject) -> None:
         super().__init__()
+<<<<<<< HEAD
         self.ExportRange = {'AreaCode':0,'PhoneNumber':1,'HasUnpaidInvoices':2,'ResponseMessage':3 ,'price':4,}
+=======
+        self.ExportRange = {'AreaCode':0,'PhoneNumber':1,'HasUnpaidInvoices':2,'ServerMsg':3 ,'Price':4,'TimeScraping':5}
+>>>>>>> c342788500481e81e86cb799eca7ff25e02ad0a5
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(parent)
         self.frame_4 = QtWidgets.QFrame(parent)
         self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -111,7 +115,11 @@ class Page1(QObject):
         self.counterlabel = QtWidgets.QLabel(self.trecounterFrame)
         self.counterlabel.setText("Counter: 0")
         self.treeWidget = MyQTreeWidget(self.frame,counterLabel=self.counterlabel)
+<<<<<<< HEAD
         self.treeWidget.setColumns(['AreaCode','PhoneNumber','HasUnpaidInvoices','ResponseMessage','price'])
+=======
+        self.treeWidget.setColumns(['AreaCode','PhoneNumber','HasUnpaidInvoices','ServerMsg','Price','TimeScraping'])
+>>>>>>> c342788500481e81e86cb799eca7ff25e02ad0a5
         self.treeWidget.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.treeWidget.customContextMenuRequested.connect(self.menu)
         self.treeWidget.setColumnWidth(0,70)
@@ -371,7 +379,7 @@ class Page2(QObject):
         self.serverMsgFrame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.horizontalLayout_11 = QtWidgets.QHBoxLayout(self.serverMsgFrame)
         self.serverMsglabel = QtWidgets.QLabel(self.serverMsgFrame)
-        self.serverMsglabel.setText("Server Message")
+        self.serverMsglabel.setText("ServerMsg")
         self.horizontalLayout_11.addWidget(self.serverMsglabel, 0, QtCore.Qt.AlignHCenter)
         self.serverMsgtoggle = AnimatedToggle(self.serverMsgFrame)
         self.serverMsgtoggle.setCheckedColor(Styles.Colors.DarkOrangeToggle)
@@ -440,8 +448,14 @@ class Page2(QObject):
         result['AreaCode'] = 0 if self.areaCodetoggle.isChecked() else None
         result['PhoneNumber'] = 1  if self.phonetoggle.isChecked() else None
         result['HasUnpaidInvoices'] = 2 if self.hasInvotoggle.isChecked() else None
+<<<<<<< HEAD
         result['ResponseMessage'] = 3  if self.serverMsgtoggle.isChecked() else None
         result['price'] = 4  if self.pricetoggle.isChecked() else None
+=======
+        result['ServerMsg'] = 3  if self.serverMsgtoggle.isChecked() else None
+        result['Price'] = 4  if self.pricetoggle.isChecked() else None
+        result['TimeScraping'] = 5  if self.timeScrapingtoggle.isChecked() else None
+>>>>>>> c342788500481e81e86cb799eca7ff25e02ad0a5
         self.ExportRangeSignal.emit(result)
 
     def getFileDir(self):

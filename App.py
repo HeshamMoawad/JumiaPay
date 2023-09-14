@@ -1,5 +1,5 @@
 from pages import Page1,Page2
-from MyPyQt5 import (
+from Packages import (
 
                 MyQMainWindow , 
                 QSideMenuEnteredLeaved , 
@@ -127,8 +127,7 @@ class Window (MyQMainWindow):
             self.DashBoard.updateWaiting(len(self.dataframe))
         if clear == True :
             self.dataframe = pandas.DataFrame()
-            self.DashBoard.updateWaiting(length = 0)
-            self.dataframeList.clear()
+            self.DashBoard.updateWaiting(0)
 
     def reshapeExelData(self,excelfile,sheetname):
         wb = openpyxl.load_workbook(excelfile)
@@ -238,28 +237,50 @@ class WorkingThread(MyThread):
                         self.Lead.emit(lead.__dict__)
                         self.next()
                     except Exception as e :
-                        pass
-                        # print(f"\t[+]\t Error With Proxy {e} - {e}")
-
-        self.statues.emit("Ended")
+                        self.Jumia.Errors.append(f"{AreaCode+PhoneNumber} -> {e}")
+                    waiting -= 1
+                    self.WaitingSignal.emit(waiting)
+                    dataframe = dataframe[1:]
+                    self.DataFrame.emit(dataframe)
+                    loops =+ 1
+                with open("Errors.txt",'w+') as file :
+                    file.writelines(self.Jumia.Errors)
+                t2 = time.time()
+                self.statues.emit("Ending")
+                self.msg.emit(f"\n {round(t2-t1,ndigits=2)} Is Total time for make {totalnumbers} number \nنورتنا يا رجولة متجيش تانى بقاا ^_-")
+        except Exception as e :
+            self.msg.emit(f"Error in {e}\nPlease Contact Hesham")
     def stopping(self,stop:bool):
         self.stop = stop
         
-    def setJumiaObj(self, jumia:BaseJumia):
-        self.JumiaObj = jumia
-
-    def setDataFrame(self,df:pandas.DataFrame):
-        self.DataFrame = df
-
-    def setIndex(self,index):
-        self.__index = index
-
-    def next(self):
-        self.DataFrame = self.DataFrame[1:]
-        self.DataFrame.reset_index()
-        self.DataFrameSignal.emit(
-            dict(dataframe=self.DataFrame , index=self.__index)
-            )
+    def logicDirMethod(self):
+        result = {}
+        result['go'] = True
         
+        if self.MainClass.Setting.lineEditDirectory.text() !=  "" :
+            try:
+                fileDir = self.MainClass.Setting.lineEditDirectory.text()
+                sheetname = 'Sheet1' if self.MainClass.Setting.lineEditSheetName.text() == '' else self.Setting.lineEditSheetName.text() 
+                self.MainClass.reshapeExelData(excelfile = fileDir, sheetname = sheetname)
+                result["go"] = True
+                result['Dataframe'] = self.MainClass.dataframe
+            except Exception as e :
+                print(e)
+                result["go"] = False 
+                result['Dataframe'] = self.MainClass.dataframe
+                self.msg.emit(f'File Directory Not Found Or Sheet Name Not Exist\nPlease Make Sure you Entered currect sheet name ')
 
+        elif self.MainClass.Setting.lineEditDirectory.text() ==  "" :
 
+            if self.MainClass.dataframe.empty :
+
+                self.msg.emit(f'No Phones In Waiting')
+                result["go"] = False 
+                result['Dataframe'] = self.MainClass.dataframe
+
+            else :
+                result["go"] = True
+                result['Dataframe'] = self.MainClass.dataframe
+
+        self.MainClass.Setting.lineEditDirectory.clear()
+        return result

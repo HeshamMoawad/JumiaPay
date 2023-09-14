@@ -1,0 +1,12 @@
+{
+    "code": "FAILED",
+    "response": "Bill account is not available at biller repository.",
+    "errors": [],
+    "stack_trace": [
+        {
+            "code": "FAILED",
+            "response": "Bill account is not available at biller repository. Client error: `POST http:\/\/fawry-eg.one.svc.cluster.local\/api\/v1\/formtype\/internet.bill.etisalatadsl` resulted in a `400 Bad Request` response:\n{\u0022code\u0022:\u0022FAILED\u0022,\u0022response\u0022:\u0022Bill account is not available at biller repository.\u0022,\u0022errors\u0022:[]}\n",
+            "errors": []
+        }
+    ]
+}

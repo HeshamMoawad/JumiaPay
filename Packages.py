@@ -1,10 +1,32 @@
-# from requests.sessions import default_headers
-from requests import Response
-import pandas as pd
-from MyPyQt5 import QObject , pyqtSignal
-import random,typing ,sqlite3,json,requests,openpyxl,datetime,pandas
-from ProxyFilterClass import ProxyFilterAPI
-import time
+import typing , sys
+import pandas , sqlite3
+from PyQt5.QtCore import (QCoreApplication, QEasingCurve, QPoint, QPointF, QEvent ,
+                          QPropertyAnimation, QRect, QRectF, QObject ,
+                          QSequentialAnimationGroup, QSize, Qt, pyqtProperty,
+                          pyqtSignal, pyqtSlot , QThread)
+from PyQt5.QtGui import * 
+from PyQt5.QtWidgets import *
+from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.common.exceptions import  NoSuchElementException
+from Packages import QThread,QObject,pyqtSignal
+import typing , time , sqlite3 , datetime , os
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from styles import Styles
+import string
+import random
+import requests 
+import threading as thr
+from bs4 import BeautifulSoup 
+
+
 
 ####################################################
 
@@ -30,237 +52,1123 @@ import time
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Contact Me
+# Contact Me 
 # GitHub : github.com/HeshamMoawad
 # Gmail : HeshamMoawad120120@gmail.com
 # Whatsapp : +201111141853
 
+
 ####################################################
 
-class DataBaseConnection(object):
+class MyQTreeWidget(QTreeWidget,QWidget):
+    onLengthChanged = pyqtSignal(int)
+    childChanged = pyqtSignal(int)
+    _CHILD_COUNT = 0
+    _ROW_INDEX = 0
+    def __init__(self, parent: typing.Optional[QWidget],counterLabel:typing.Optional[QLabel]) -> None:
+        super().__init__(parent)
+        self.counterLabel = counterLabel
+        self.ColumnNames = []
+        if counterLabel != None : 
+            self.onLengthChanged.connect(self.CounterLabel)
+        
+    def extract_data_to_DataFrame(self,range_of:range=None)-> pandas.DataFrame:
+        self.COLUMN_NAMES = [self.headerItem().text(i) for i in (range(self.columnCount()) if range_of == None else range_of)]
+        self.df = pandas.DataFrame(columns=self.COLUMN_NAMES)
+        for col_index in (range(self.columnCount()) if range_of == None else range_of) :
+            col_vals = []
+            for row_index in range(self.topLevelItemCount()):
+                text = self.topLevelItem(row_index).text(col_index)
+                col_vals.append(text)
+                for ch_index in range(self.topLevelItem(row_index).childCount()):
+                    chtext = self.topLevelItem(row_index).child(ch_index).text(col_index)
+                    col_vals.append(chtext)
+            self.df[self.COLUMN_NAMES[col_index]] = col_vals
+        return self.df
+
+    def getCustomDataFrame(self,values:dict)-> pandas.DataFrame:
+        re = []
+        df = self.extract_data_to_DataFrame()
+        for key , value in values.items():
+            if value != None :
+                re.append(key)
+        return df[re] 
+
+    def extract_data_to_list(self,index_of_column)->list:
+        return self.extract_data_to_DataFrame()[self.COLUMN_NAMES[index_of_column]].to_list()
+    
+    def extract_data_to_string(self,index_of_column)->str:
+        return self.extract_data_to_DataFrame()[self.COLUMN_NAMES[index_of_column]].to_string(index=False)
+
+    def extract_columns(self,lista)->str:
+        return self.extract_data_to_DataFrame()[[self.COLUMN_NAMES[i] for i in lista]].to_string(index=False)
+
+    def appendDataAsList(self,items:typing.Optional[list],childs:typing.Optional[list]=None,Icon:str=None)-> None:
+        # print(len(items))        
+        item_ = QTreeWidgetItem(self)
+        item_.setIcon(0,QIcon(Icon)) if Icon != None else None
+        for i in range(self.columnCount()):
+            self.topLevelItem(self._ROW_INDEX).setText(i,items[i])
+        if childs != None:
+            childindex = 0
+            if type(childs[0]) is list :
+                for child in childs:
+                    child_ = QTreeWidgetItem(item_)
+                    for i in range(self.columnCount()):
+                        item = self.topLevelItem(self._ROW_INDEX)
+                        item.child(childindex).setText(i, child[i])
+                    self.childChanged.emit(item.childCount())
+                    self._CHILD_COUNT+=1
+                    childindex += 1
+            else:
+                child_ = QTreeWidgetItem(item_)
+                for i in range(self.columnCount()):
+                    item = self.topLevelItem(self._ROW_INDEX)
+                    item.child(childindex).setText(i, childs[i])
+                self._CHILD_COUNT+=1
+                self.childChanged.emit(item.childCount())
+        self._ROW_INDEX += 1
+        self.onLengthChanged.emit(self._ROW_INDEX)
+        
+
+    #################
+    def appendDataAsDict(self,items:typing.Optional[dict],Icon:str=None)-> None:
+        # print(items)
+        item_ = QTreeWidgetItem(self)
+        item_.setIcon(0,QIcon(Icon)) if Icon != None else None
+        for column in self.ColumnNames:
+            self.topLevelItem(self._ROW_INDEX).setText(self.ColumnNames.index(column),str(items[column]))
+        self._ROW_INDEX += 1
+        self.onLengthChanged.emit(self._ROW_INDEX)
+
+    
+    @pyqtProperty(int)
+    def length(self):
+        return self._ROW_INDEX
+    
+    
+    def CounterLabel(self):
+        self.counterLabel.setText(f"Count : {self._ROW_INDEX}")
+        
+    def setColumns(self, columns: list) -> None:
+        for column in columns:
+            self.ColumnNames.append(column)
+            self.headerItem().setText(columns.index(column),str(column))
+
+    def takeTopLevelItem(self, index: int) -> QTreeWidgetItem:
+        """
+        To Delete Row From Widget 
+        """
+        self._ROW_INDEX -= 1
+        self.onLengthChanged.emit(self._ROW_INDEX)
+        if self.topLevelItem(index).childCount() >= 1:
+            self._CHILD_COUNT = self._CHILD_COUNT - self.topLevelItem(index).childCount()
+        return super().takeTopLevelItem(index)
+
+    def childrenCount(self)-> int:
+        """
+        To get Children Count in All widget
+        """
+        count = 0
+        for row in range(self._ROW_INDEX):
+            count = count + self.topLevelItem(row).childCount()
+        return count
+
+    def clear(self) -> None:
+        """
+        To Clear TreeWidget
+        """
+        self._ROW_INDEX = 0
+        self._CHILD_COUNT = 0
+        self.onLengthChanged.emit(self._ROW_INDEX)
+        return super().clear()
+
+    
+class AnimatedToggle(QCheckBox):
+
+    _transparent_pen = QPen(Qt.transparent)
+    _light_grey_pen = QPen(Qt.lightGray)
+
+    def __init__(self,
+        parent=None,
+        bar_color=Qt.gray,
+        checked_color="#00B0FF",#c21919 
+        handle_color=Qt.white,
+        pulse_unchecked_color="#44999999",
+        pulse_checked_color="#4400B0EE"
+        ):
+        super().__init__(parent)
+
+        # Save our properties on the object via self, so we can access them later
+        # in the paintEvent.
+        self._bar_brush = QBrush(bar_color)
+        self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
+
+        self._handle_brush = QBrush(handle_color)
+        self._handle_checked_brush = QBrush(QColor(checked_color))
+
+        self._pulse_unchecked_animation = QBrush(QColor(pulse_unchecked_color))
+        self._pulse_checked_animation = QBrush(QColor(pulse_checked_color))
+
+        # Setup the rest of the widget.
+        self.setContentsMargins(8, 0, 8, 0)
+        self._handle_position = 0
+
+        self._pulse_radius = 0
+
+        self.animation = QPropertyAnimation(self, b"handle_position", self)
+        self.animation.setEasingCurve(QEasingCurve.InOutCubic)
+        self.animation.setDuration(200)  # time in ms
+
+        self.pulse_anim = QPropertyAnimation(self, b"pulse_radius", self)
+        self.pulse_anim.setDuration(350)  # time in ms
+        self.pulse_anim.setStartValue(10)
+        self.pulse_anim.setEndValue(20)
+
+        self.animations_group = QSequentialAnimationGroup()
+        self.animations_group.addAnimation(self.animation)
+        self.animations_group.addAnimation(self.pulse_anim)
+
+        self.stateChanged.connect(self.setup_animation)
+
+    def checkedColor(self):
+        return self._handle_checked_brush
+
+    def setCheckedColor(self,color:typing.Optional[str]):
+        self._bar_checked_brush = QBrush(QColor(color).lighter())
+        self._handle_checked_brush = QBrush(QColor(color))
+
+
+    def sizeHint(self):
+        return QSize(58, 45)
+
+    def hitButton(self, pos: QPoint):
+        return self.contentsRect().contains(pos)
+
+    @pyqtSlot(int)
+    def setup_animation(self, value):
+        self.animations_group.stop()
+        if value:
+            self.animation.setEndValue(1)
+        else:
+            self.animation.setEndValue(0)
+        self.animations_group.start()
+
+    def paintEvent(self, e: QPaintEvent):
+
+        contRect = self.contentsRect()
+        handleRadius = round(0.24 * contRect.height())
+
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+
+        p.setPen(self._transparent_pen)
+        barRect = QRectF(
+            0, 0,
+            contRect.width() - handleRadius, 0.40 * contRect.height()
+        )
+        barRect.moveCenter(contRect.center())
+        rounding = barRect.height() / 2
+
+        # the handle will move along this line
+        trailLength = contRect.width() - 2 * handleRadius
+
+        xPos = contRect.x() + handleRadius + trailLength * self._handle_position
+
+        if self.pulse_anim.state() == QPropertyAnimation.Running:
+            p.setBrush(
+                self._pulse_checked_animation if
+                self.isChecked() else self._pulse_unchecked_animation)
+            p.drawEllipse(QPointF(xPos, barRect.center().y()),
+                          self._pulse_radius, self._pulse_radius)
+
+        if self.isChecked():
+            p.setBrush(self._bar_checked_brush)
+            p.drawRoundedRect(barRect, rounding, rounding)
+            p.setBrush(self._handle_checked_brush)
+
+        else:
+            p.setBrush(self._bar_brush)
+            p.drawRoundedRect(barRect, rounding, rounding)
+            p.setPen(self._light_grey_pen)
+            p.setBrush(self._handle_brush)
+
+        p.drawEllipse(
+            QPointF(xPos, barRect.center().y()),
+            handleRadius, handleRadius)
+
+        p.end()
+
+    @pyqtProperty(float)
+    def handle_position(self):
+        return self._handle_position
+
+    @handle_position.setter
+    def handle_position(self, pos):
+        """change the property
+        we need to trigger QWidget.update() method, either by:
+            1- calling it here [ what we doing ].
+            2- connecting the QPropertyAnimation.valueChanged() signal to it.
+        """
+        self._handle_position = pos
+        self.update()
+
+    @pyqtProperty(float)
+    def pulse_radius(self):
+        return self._pulse_radius
+
+    @pulse_radius.setter
+    def pulse_radius(self, pos):
+        self._pulse_radius = pos
+        self.update()
+
+
+class MyMessageBox(QMessageBox):
+    INFO = QMessageBox.Icon.Information
+    WARNING = QMessageBox.Icon.Warning
+    CRITICAL = QMessageBox.Icon.Critical
+
+    def showWarning(self,text:typing.Optional[str]="Warning",title:typing.Optional[str]="Warning"):
+        self.setIcon(self.WARNING)
+        self.setWindowTitle(title)
+        self.setText(text)
+        self.exec_()
+
+    def showInfo(self,text:typing.Optional[str]="Info",title:typing.Optional[str]="Information"):
+        self.setIcon(self.INFO)
+        self.setWindowTitle(title)
+        self.setText(text)
+        self.exec_()
+
+    def showCritical(self,text:typing.Optional[str]="Critical",title:typing.Optional[str]="Critical"):
+        self.setIcon(self.CRITICAL)
+        self.setWindowTitle(title)
+        self.setText(text)
+        self.exec_()        
+
+
+class QSideMenuNewStyle(QWidget):
+    def __init__(
+            self,
+            parent:QWidget,
+            ButtonsCount:int = 2,
+            PagesCount:int = 2 ,
+            ButtonsSpacing:int = 3 ,
+            Duration:int = 400 ,
+            DefultIconPath:str = None ,
+            ClickIconPath:str = None ,  
+            StretchMenuForStacked:tuple=(1,5) ,
+            StretchTopForBottomFrame:tuple = (1,6),
+            ButtonsFrameFixedwidth:int=None,
+            TopFrameFixedHight:int= 40,
+            ExitButtonIconPath:str=None ,
+            ButtonsFixedHight:int=None , 
+            MaxButtonIconPath:str = None ,
+            Mini_MaxButtonIconPath:str = None ,
+            MiniButtonIconPath:str = None,
+            **kwargs,
+
+        ) -> None:
+        super().__init__(parent)
+
+        self.DefultIconPath = DefultIconPath
+        self.ClickIconPath = ClickIconPath
+        self.verticalLayout = QVBoxLayout(parent)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setSpacing(0)
+        self.TopFrame = MyQFrame(parent,Draggable=True)
+        self.TopFrame.setFixedHeight(TopFrameFixedHight) if TopFrameFixedHight != None else None
+        # self.TopFrame.setStyleSheet("background-color:transparent;")
+        self.horizontalLayout_2 = QHBoxLayout(self.TopFrame)
+        self.MenuButton = QPushButton(self.TopFrame , text=" Menu")
+        # self.MenuButton.setStyleSheet(Styles.BUTTON)
+        self.MenuButton.setFlat(True)
+        self.MenuButton.setShortcut("Ctrl+m")
+        self.MenuButton.setFixedHeight(self.TopFrame.height()-15)
+        self.MenuButton.setFixedWidth(50)
+        self.horizontalLayout_2.addWidget(self.MenuButton, 1, Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
+        self.MainLabel = QLabel(self.TopFrame)
+        self.MainLabel.setText("Statues")
+        self.horizontalLayout_2.addWidget(self.MainLabel, 4 ,Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignCenter)
+        self.MiniButton = QPushButton(self.TopFrame)
+        self.MiniButton.setFlat(True)
+        self.MiniButton.setFixedSize(QSize(20,20))
+        self.MiniButton.setIcon(QIcon(MiniButtonIconPath)) if MiniButtonIconPath != None else None
+        self.horizontalLayout_2.addWidget(self.MiniButton, 0,Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
+        self.MiniButton.clicked.connect(parent.parent().showMinimized)
+        self.MaxButton = QPushButton(self.TopFrame)
+        self.MaxButton.setFlat(True)
+        self.MaxButton.setFixedSize(QSize(20,20))
+        self.MaxButton.setIcon(QIcon(MaxButtonIconPath)) if MaxButtonIconPath != None else None
+        self.MaxButton.clicked.connect(lambda : self.max_mini(self.parent().parent(),MaxButtonIconPath,Mini_MaxButtonIconPath,ButtonsFrameFixedwidth))
+        self.horizontalLayout_2.addWidget(self.MaxButton, 0,Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
+        self.ExitButton = QPushButton(self.TopFrame)        
+        self.ExitButton.setFlat(True)
+        self.ExitButton.setFixedSize(QSize(20,20))
+        self.ExitButton.setIconSize(QSize(20,20))
+        self.ExitButton.setIcon(QIcon(ExitButtonIconPath)) if ExitButtonIconPath != None else None
+        self.ExitButton.clicked.connect(parent.close)
+        self.ExitButton.clicked.connect(QCoreApplication.instance().quit)        
+        self.horizontalLayout_2.addWidget(self.ExitButton, 0, Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
+        self.horizontalLayout_2.setContentsMargins(5,5,6,5)
+        self.verticalLayout.addWidget(self.TopFrame)
+        self.BottomFrame = MyQFrame(parent)
+        # self.BottomFrame.setStyleSheet("background-color:transparent;")
+        self.horizontalLayout = QHBoxLayout(self.BottomFrame)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setSpacing(0)
+        self.ButtonsFrame = MyQFrame(self.BottomFrame)
+        # self.ButtonsFrame.setStyleSheet("background-color:transparent;")
+        self.ButtonsFrame.setFixedWidth(ButtonsFrameFixedwidth) if ButtonsFrameFixedwidth != None else None
+        self.verticalLayout_2 = QVBoxLayout(self.ButtonsFrame)
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_2.setSpacing(ButtonsSpacing)
+        self.Buttons = [] #ButtonsList
+        for index in range(ButtonsCount) :
+            Button = QPushButton(self.ButtonsFrame , text=f"Button {index}")
+            sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+            sizePolicy.setHeightForWidth(Button.sizePolicy().hasHeightForWidth())
+            Button.setFixedHeight(ButtonsFixedHight) if ButtonsFixedHight != None else None
+            Button.setSizePolicy(sizePolicy)
+            if index == ButtonsCount - 1 :
+                self.verticalLayout_2.addWidget(Button ,1, Qt.AlignmentFlag.AlignTop)
+            else :
+                self.verticalLayout_2.addWidget(Button ,0, Qt.AlignmentFlag.AlignTop)
+            Button.setFlat(True)
+            self.Buttons.append(Button)
+        self.HideLabel = QLabel(self.ButtonsFrame)
+        self.HideLabel.setText("Hide Browser")
+        self.verticalLayout_2.addWidget(self.HideLabel,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
+        self.Hidetoggle = AnimatedToggle(self.ButtonsFrame)
+        self.Hidetoggle.setShortcut("Ctrl+h")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.Hidetoggle.setSizePolicy(sizePolicy)
+        self.verticalLayout_2.addWidget(self.Hidetoggle,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
+        self.DarkModeLabel = QLabel(self.ButtonsFrame)
+        self.DarkModeLabel.setText("Dark~Mode")
+        self.verticalLayout_2.addWidget(self.DarkModeLabel,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
+        self.DarkModetoggle = AnimatedToggle(self.ButtonsFrame)
+        self.DarkModetoggle.setShortcut("Ctrl+d")
+        # self.DarkModetoggle.setCheckedColor("#c21919")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.DarkModetoggle.setSizePolicy(sizePolicy)
+        self.verticalLayout_2.addWidget(self.DarkModetoggle,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
+        self.horizontalLayout.addWidget(self.ButtonsFrame)
+        self.stackedWidget = QStackedWidget(self.BottomFrame)
+        self.Pages = []
+        for Page in range(PagesCount):
+            Page = QWidget()
+            self.stackedWidget.addWidget(Page)
+            self.Pages.append(Page)
+
+        self.horizontalLayout.addWidget(self.stackedWidget)
+        self.horizontalLayout.setStretch(0 , StretchMenuForStacked[0])
+        self.horizontalLayout.setStretch(1, StretchMenuForStacked[1])
+        self.verticalLayout.addWidget(self.BottomFrame)
+        self.verticalLayout.setStretch(0 ,StretchTopForBottomFrame[0])
+        self.verticalLayout.setStretch(1 , StretchTopForBottomFrame[1])
+        self.MAXWIDTH = self.ButtonsFrame.width()
+        self.NORMALWIDTH = self.MAXWIDTH
+        self.Animation = QPropertyAnimation(self,b"Width",self)
+        self.Animation.setDuration(Duration)
+        self.MenuButton.setIcon(QIcon(DefultIconPath)) if DefultIconPath != None else None
+        self.MenuButton.clicked.connect(self.MenuClick)
+        self.ButtonsFrame.setFixedWidth(0)
+        self.setCurrentPage(0)
+    
+
+    @pyqtProperty(int)
+    def Width(self):
+        return self.ButtonsFrame.width()
+    
+    @Width.setter
+    def Width(self,val):
+        self.ButtonsFrame.setFixedWidth(val)
+        
+    def MenuClick(self)-> None:
+        if self.ButtonsFrame.width() == self.MAXWIDTH :
+            self.MenuButton.setIcon(QIcon(self.DefultIconPath)) if self.DefultIconPath != None else None
+            self.Animation.setStartValue(0)
+            self.Animation.setEndValue(self.MAXWIDTH)
+            self.Animation.setDirection(self.Animation.Direction.Backward)
+            self.Animation.start()
+
+        elif self.ButtonsFrame.width() != self.MAXWIDTH :
+            self.Animation.setStartValue(0)
+            self.Animation.setEndValue(self.MAXWIDTH)
+            self.MenuButton.setIcon(QIcon(self.ClickIconPath)) if self.ClickIconPath != None else None
+            self.Animation.setDirection(self.Animation.Direction.Forward)
+            self.Animation.start()
+
+    @pyqtSlot(int,str)
+    def setButtonText(self,index:int,text:str)-> None:
+        self.Buttons[index].setText(text)
+
+    @pyqtSlot(int,str)
+    def setButtonIcon(self,index:int,IconPath:str)-> None:
+        self.Buttons[index].setIcon(QIcon(IconPath))
+        
+    def Connections(self,index:int,func):
+        self.Buttons[index].clicked.connect(func)
+
+    def GetButton(self,index:int)-> QPushButton:
+        return self.Buttons[index]
+
+    def GetPage(self,index:int)-> QWidget:
+        return self.Pages[index]
+
+    @pyqtSlot(int)
+    def setCurrentPage(self,index:int):
+        self.stackedWidget.setCurrentIndex(index)
+
+    def max_mini(self , parent:QMainWindow , path1:str , path2:str , Fixedwidth):
+        if parent.isMaximized():
+            parent.showNormal()
+            self.MaxButton.setIcon(QIcon(path1))
+            self.MAXWIDTH = self.NORMALWIDTH
+        else :
+            parent.showMaximized()
+            self.MaxButton.setIcon(QIcon(path2))
+            self.MAXWIDTH = Fixedwidth + 150 if Fixedwidth is int else 200
+
+
+class MyQFrame(QFrame):
+    Enterd = pyqtSignal()
+    Leaved = pyqtSignal()
+
+    def __init__(self, parent: typing.Optional[QWidget] = ...,Draggable:typing.Optional[bool]=False) -> None:
+        super().__init__(parent)
+        self.oldPos = self.pos()
+        self.__draggable = Draggable
+
+    def enterEvent(self, a0: QEvent) -> None:
+        self.Enterd.emit()
+        return super().enterEvent(a0)
+        
+    def leaveEvent(self, a0: QEvent) -> None:
+        self.Leaved.emit()
+        return super().leaveEvent(a0)
+    
+    def mousePressEvent(self, event):
+        self.oldPos = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        if self.__draggable:
+            delta = QPoint (event.globalPos() - self.oldPos)
+            self.parent().parent().move(self.parent().parent().x() + delta.x(), self.parent().parent().y() + delta.y())
+            self.oldPos = event.globalPos()
+    
+## --------------- New Class to Convert CustomContextMenu
+class MyCustomContextMenu(QObject):
+
+    def __init__(self,Actions_arg:typing.List[str]) -> None:
+        super().__init__()
+        self.Menu = QMenu()
+        self.Actions = self.convert(Actions_arg)
+
+
+    def convert(self,Actions_arg:typing.List[str])-> typing.List[QAction]:
+        """Adding Actions to contextmenu and returns it into List[QAction]"""
+        result = []
+        for action in Actions_arg:
+            Action = self.Menu.addAction(action)
+            result.append(Action)
+        return result
+
+    def connect(self ,index_of_Action:int,func)-> None  :
+        """Adding Actions to contextmenu and returns it into List[QAction]"""
+        self.Actions[index_of_Action].triggered.connect(func)
+
+    def connectShortcut(self ,index_of_Action:int,shortcut)-> None  :
+        self.Actions[index_of_Action].setShortcut(shortcut)
+        
+    def multiConnect(self,functions:typing.List[typing.Callable] , range_of:typing.Optional[range]=None):
+        for Action in (range(len(self.Actions)) if range_of == None else range_of):
+            self.Actions[Action].triggered.connect(functions[Action])
+
+
+    def show(self):
+        cur = QCursor()
+        self.Menu.exec_(cur.pos())
+
+## ------------ QMainWindow custom widget
+class MyQMainWindow(QMainWindow):
+    App = QApplication(sys.argv)
+    Leaved = pyqtSignal()
+    Entered = pyqtSignal()
+    ShowSignal = pyqtSignal()
+    MessageBox = MyMessageBox()
+    msg = MyMessageBox()
+    
+    
     def __init__(self) -> None:
-        self.con = sqlite3.connect("Data\Database.db")
+        super().__init__()
+        self.mainWidget = QWidget(self)
+        self.SetupUi()
+
+    def leaveEvent(self, a0:QEvent) -> None: 
+        """Method that will running if your mouse Leaved From Widget """
+        self.Leaved.emit()
+        return super().leaveEvent(a0)
+
+    def enterEvent(self, a0:QEvent) -> None:
+        """Method that will running if your mouse Entered Into Widget """
+        self.Entered.emit()
+        return super().enterEvent(a0)
+    
+    def setFrameLess(self):
+        """to set your window without frame"""
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+
+    def SetupUi(self):
+        """the method that will run Automaticly with calling class"""
+        self.setCentralWidget(self.mainWidget)
+        self.show()
+        sys.exit(self.App.exec_())
+
+    def setAppIcon(self,relativePath:str):
+        """To set Icon For Your App"""
+        app_icon = QIcon()
+        app_icon.addFile(relativePath, QSize(16,16))
+        app_icon.addFile(relativePath, QSize(24,24))
+        app_icon.addFile(relativePath, QSize(32,32))
+        app_icon.addFile(relativePath, QSize(48,48))
+        app_icon.addFile(relativePath, QSize(256,256))
+        self.App.setWindowIcon(app_icon)
+    
+## ---------------------- Validation some texts 
+class Validation(object):
+    class Numbers(object):
+        def __init__(self,phone:str) -> None:
+            self.__phone = phone
+        def __len__(self):
+            return len(self.__phone)
+        def setPhone(self,phone:str)-> None :
+            self.__phone = phone
+        @property 
+        def phone(self) -> str :
+            return self.__phone
+        @property
+        def length(self):
+            return len(self.__phone)
+        def saudiNumberCountryCode(self) -> str:
+            if self.length > 13 : # +9660557888738
+                return self.__phone[:4]+self.__phone[6:]
+            elif self.length > 12 and "+" in self.__phone: # +966557888738
+                return self.__phone
+            elif self.length > 12 and "+" not in self.__phone: # 9660557888738
+                return self.__phone
+            elif self.length > 11 and "+" not in self.__phone : # 966557888738
+                return "+" + self.__phone
+            elif self.length > 9 : # 0557888738
+                return "+966" + self.__phone[1:]
+            elif self.length > 8 : # 557888738
+                return "+966" + self.__phone
+
+    class Telegram(object):
+        def channelNameOrLinkToHandle(self,text:str)->str:
+            """This Method takes TelegramLink or TelegramHandle and Returns into Handle 
+            examples :
+                ex: Input -> https://t.me/examplelink  return -> @examplelink
+                ex: Input -> @examplelink return -> @examplelink
+            """
+            if "@" in text:
+                return text
+            elif "https://t.me/"in text :
+                return text.replace("https://t.me/","@")
+
+## ---------------------- Used For some simple Batabase Actions 
+class DataBase():
+    def __init__(self,relativepath:str = "Data\Database.db") -> None:
+        self.con = sqlite3.connect(relativepath)
         self.cur = self.con.cursor()
-#--------------------------------------------------------------------
-    def exist(self,table,value:dict) ->bool :
-        # value = {'PhoneNumber':['PhoneNumber'],'AreaCode':['AreaCode']}
-        self.cur.execute(f"""SELECT * FROM {table} WHERE  PhoneNumber = '{value['PhoneNumber']}' AND AreaCode = '{value['AreaCode']}'; """)
+
+    def columns(self,table)->list:
+        return [x[0] for x in self.cur.execute(f"SELECT * FROM {table}").description ]
+
+    def exist(self,table,column,val):
+        """
+        Check if this Value is exist or not \n
+        1- If value is exist that will return -> True \n
+        2- If value is not exist that will return -> False
+        """
+        self.cur.execute(f"""SELECT * FROM {table} WHERE {column} = '{val}'; """)
         return True if self.cur.fetchall() != [] else False
     
-#-------------------------------------------------------------------
-    def addCustomer(self,vendor,**kwargs):
-        print()
+    def Search(self,table,column,val,indexretval:int):
+        self.cur.execute(f"""SELECT * FROM {table} WHERE {column} = '{val}'; """)
         try:
+            return self.cur.fetchall()[0][indexretval]
+        except Exception as e :
+            # print(f'\nError In Search -> {e}-')
+            return None
+
+    def getTabelIntoDataFrame(self,table:str)->pandas.DataFrame:
+        return pandas.read_sql_query(f'SELECT * FROM {table}',con=self.con)
+
+    def addToDataAsDict(self,table:str,**kwargs):
+        """
+        Adding values to Database :-\n
+        example : \n
+        'if you want to add number to (PhoneNumber)column in (userdata) table in DB'\n
+        add_to_db(\n
+            table = userdata ,\n
+            PhoneNumber = value , # number that you want to add
+        )
+        """
+        try:
+            columns = self.columns(table)
+            # print(columns)
+            # t = f"""
+            # \n
+            # COLUMNS = {columns}
+            # INSERT INTO {table} {str(tuple(columns)).replace("'","")}
+            # VALUES {tuple([(kwargs[column] if kwargs[column] != None else 'NULL') for column in columns ])} ; 
+            # """
+            # print(t)
             self.cur.execute(f"""
-            INSERT INTO {vendor} {str(tuple(kwargs.keys())).replace("'","")}
-            VALUES {tuple(kwargs.values())}; 
+            INSERT INTO {table} {str(tuple(columns)).replace("'","")}
+            VALUES {tuple([(kwargs[column] if kwargs[column] != None else 'NULL') for column in columns ])} ; 
             """)
             self.con.commit()
+            # print(t)
         except Exception as e:
-            print(f"\n{e} \nError in addCustomer \n")
-
-#--------------------------------------------------------------------        
-    def reshapeExelData(self,excelfile,sheetname):
-        wb = openpyxl.load_workbook(excelfile)
-        ws = wb[sheetname]
-        df = pd.DataFrame(ws.values)
-        response = []
-        for row in df.index:
-            res = (f"{df.iloc[row][0]}", f"{df.iloc[row][1]}")
-            response.append(res)
-        return response[1:]
-
-###############################################################
-
-class LeadObjectFirst(object):
-    def __init__(self,Response:dict) -> None:
-        self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
-        self.goNext = True
-        self.statusOfResponse = Response["code"]  # "SUCCESS"
-        try:
-            self.Price = Response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2]
-        except Exception as e :
-            try:
-                self.Price = Response["response"]["elements"][0]["label"]
-                print(f"error in and fixed  {e} with response {self.Price}")
-            except Exception as e :
-                print(f"error in {e} with response {self.Response}")
-                self.Price = "can't get Price"
-        self.ServerMsg = Response["response"]["elements"][0]["label"]
-        self.AreaCode = Response['AreaCode']
-        self.PhoneNumber = Response['PhoneNumber']
-        self.HasUnpaidInvoices = 'يوجد فاتورة' 
-        self.TimeScraping = str(round(Response['TimeScraping'],ndigits =2)) # Response['TimeScraping'] 
-        
-
-    def __str__(self) -> str:
-        return str(self.dictOfObject)
-        
-    @property
-    def dictOfObject(self)->dict:
-        return self.__dict__
-
-############################################
-
-class LeadObjectSec(object):
-    def __init__(self,Response:dict) -> None:
-        self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
-        self.goNext = True
-        self.statusOfResponse = Response["code"]  # "SUCCESS"
-        self.Price = str(Response["response"]['payment_details'][0]['raw_value'])
-        self.ServerMsg = 'Redirect Page' #Response["response"]["elements"][0]["label"]
-        self.AreaCode = Response['AreaCode']
-        self.PhoneNumber = Response['PhoneNumber']
-        self.HasUnpaidInvoices = 'يوجد فاتورة' 
-        self.TimeScraping = str(round(Response['TimeScraping'],ndigits =2)) # Response['TimeScraping'] 
-
-    def __str__(self) -> str:
-        return str(self.dictOfObject)
-        
-    @property
-    def dictOfObject(self)->dict:
-        return self.__dict__
-
-############################################
-
-class LeadObjectNoClient(object):
-    def __init__(self,Response:dict) -> None:
-        self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
-        self.goNext = True
-        self.statusOfResponse = Response["code"]  # "INVALID_FIELDS"
-        self.Price = str(None)
-        self.ServerMsg = Response['response'] #Response["response"]["elements"][0]["label"]
-        self.AreaCode = Response['AreaCode']
-        self.PhoneNumber = Response['PhoneNumber']
-        self.HasUnpaidInvoices = 'لايوجد'
-        self.TimeScraping = str(round(Response['TimeScraping'],ndigits =2)) # Response['TimeScraping'] 
-
-    def __str__(self) -> str:
-        return str(self.dictOfObject)
-        
-    @property
-    def dictOfObject(self)->dict:
-        return self.__dict__
-
-############################################
-
-class LeadObjectUndefined(object):
-    def __init__(self,Response:dict) -> None:
-        self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
-        self.goNext = True
-        self.statusOfResponse = f'Undefined-{Response}'  # "INVALID_FIELDS"
-        self.Price = str(None)
-        self.ServerMsg = Response["response"] if 'response' in Response.keys() else "Undefined Message"   #Response["response"]["elements"][0]["label"]
-        self.AreaCode = Response['AreaCode']
-        self.PhoneNumber = Response['PhoneNumber']
-        self.HasUnpaidInvoices = "Undefined"
-        self.TimeScraping = str(round(Response['TimeScraping'],ndigits =2)) # Response['TimeScraping'] 
-
-    def __str__(self) -> str:
-        return str(self.dictOfObject)
-        
-    @property
-    def dictOfObject(self)->dict:
-        return self.__dict__
-
-###############################################################
+            print(f"\n{e} \nError in Database \n")
+            # print(t)
+            print("\n")
 
 
+    def close(self):
+        """Closing DataBase"""
+        return self.con.close()
 
-class JumiaPay(QObject):
-    Lead = pyqtSignal(dict)
-    msg = pyqtSignal(str)
-    stop = pyqtSignal(bool)
+## -------------------------- Used for make some console methods
+class JavaScriptCodeHandler(object):
 
-    DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
+    def __init__(self,driver:WebDriver) -> None:
+        self.driver = driver
     
-    class ResponseStatus():
-        Success = 'SUCCESS'
-        Faild = 'INVALID_FIELDS'
+    def jscode(self,command):
+        """
+        Method to send commands to webdriver console\n example:\n
+        1- 'if you want to define variable to console'\n
+        jscode("var num = 1")\n
+        2- 'if you want to get value from console function'\n
+        return jscode("return value")\n
+         """
+        return self.driver.execute_script(command)
+    
 
-    class ResponseLength():
-        Normal = 6
-        Second = 5
+    def WaitingElement(self,timeout:int,val:str,by:str=By.XPATH)->typing.Optional[WebElement]:
+        """Waiting Element to be located and return it with WebElemnt instance"""
+        end_time = time.time() + timeout
+        while True:
+            if time.time() > end_time :
+                print("TimedOut and Breaked")
+                break
+            try:
+                result = self.driver.find_element(by,val)
+                break
+            except NoSuchElementException :
+                QThread.msleep(100)
+        return result
+    
+    def WaitingElements(self,timeout:int,val:str,by:str=By.XPATH)->typing.Optional[typing.List[WebElement]]:
+        """Waiting Elements to be located and return its with List[WebElemnt] instance"""
+        end_time = time.time() + timeout
+        while True:
+            if time.time() > end_time :
+                print("TimedOut and Breaked")
+                break
+            try:
+                result = self.driver.find_elements(by,val)
+                break
+            except NoSuchElementException :
+                QThread.msleep(100)
+        return result
+            
+    def WaitingMethod(self,timeout:int,func):
+        """Waiting Method to be done and return value from Method with same instance"""
+        end_time = time.time() + timeout
+        while True:
+            if time.time() > end_time :
+                print("TimedOut and Breaked")
+                break
+            try:
+                result = func()
+            except Exception as e :
+                pass
+        return result
 
-    class Flags():
-        RandomUserAgent = 'RandomUserAgent'
-        RandomProxy = 'RandomProxy'
+##----------------- Base Class to start webdriver , scraping with some Options 
+class BaseScrapingClassQt5(QObject):
+    LeadSignal = pyqtSignal(list)
+    PersntageSignal = pyqtSignal(int)
+    def __init__(
+            self,
+            url:str ,
+            loginElementXpath:str ,
+            headless:bool = False ,
+            darkMode:bool = False ,
+            userProfile:str="Guest", 
+            ) -> None:
+        
+        option = Options()
+        option.headless = True if  headless == True else False
+        option.add_experimental_option("excludeSwitches", ["enable-logging"])
+        option.add_argument('--disable-logging')
+        option.add_argument('--force-dark-mode') if darkMode == True else None
+        option.add_argument(f"user-data-dir={os.getcwd()}\\Profiles\\{userProfile}")
+        self.driver = Chrome(ChromeDriverManager().install(),options=option)
+        self.js = JavaScriptCodeHandler(self.driver)
+        self.driver.maximize_window()
+        self.driver.get(url)
+        self.leadCount = 0
+        self.js.WaitingElement(600,loginElementXpath)
+        QThread.sleep(3)
+        super().__init__()
 
-    class Vendors():
-        We = 'WE'
-        Etisalat = 'Etisalat'
-        Orange = 'Orange'
-        Noor = 'Noor'
-        All = [We,Etisalat,Orange,Noor]
+    def exit(self):
+        """To exit webdriver"""
+        self.driver.quit()
 
-    def __init__(self,vendor:str) -> None:
-        self.vendor = vendor
-        self.URLs = {
-            'WE': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.postpaid.wehome@aman",
-            'Etisalat': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.postpaid.etisalat@aman",
-            'Orange': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.bill.orangedsl@fawry",
-            'Noor': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.bill.nooradsl@fawry"
-        }
-        self.Headers = {
-            'WE': {
-                'accept': 'application/json, text/plain, */*',
-                'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'en',
-                'content-length': '890',
-                'content-type': 'application/json;charset=UTF-8',
-                'origin': 'https://pay.jumia.com.eg',
-                'referer': 'https://pay.jumia.com.eg/services/internet-bills',
-                'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.117 Mobile Safari/537.36',
-            },
+    def wait_elm(self,val:str,by:str=By.XPATH,timeout:int=5)->WebElement:
+        self.wait = WebDriverWait(self.driver, timeout=timeout)
+        arg = (by,val)
+        return self.wait.until(EC.presence_of_element_located(arg))
 
-            'Etisalat': {
-                'accept': 'application/json, text/plain, */*',
-                'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'en',
-                'content-length': '655',
-                'content-type': 'application/json;charset=UTF-8',
-                'origin': 'https://pay.jumia.com.eg',
-                'referer': 'https://pay.jumia.com.eg/services/internet-bills',
-                'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-            },
+    def wait_elms(self,val:str,by:str=By.XPATH,timeout:int=30)->typing.List[WebElement]:
+        self.wait = WebDriverWait(self.driver, timeout=timeout)
+        arg = (by,val)
+        elments = self.wait.until(EC.presence_of_all_elements_located(arg))
+        return elments
 
-            'Orange': {
-                'accept': 'application/json, text/plain, */*',
-                'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'en',
-                'content-length': '890',
-                'content-type': 'application/json;charset=UTF-8',
-                'origin': 'https://pay.jumia.com.eg',
-                'referer': 'https://pay.jumia.com.eg/services/internet-bills',
-                'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-            },
+    def NormalScroll(self):
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-            'Noor': {
-                'accept': 'application/json, text/plain, */*',
-                'accept-encoding': 'gzip, deflate, br',
-                'accept-language': 'en',
-                'content-length': '888',
-                'content-type': 'application/json;charset=UTF-8',
-                'origin': 'https://pay.jumia.com.eg',
-                'referer': 'https://pay.jumia.com.eg/services/internet-bills',
-                'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-            }
-        }
-        payloadsfile = open("json\payloads.json", "r")
-        self.Payloads = json.load(payloadsfile)
-        self.UserAgentList = """
+
+class MyQToolButton(QToolButton):
+    Enterd = pyqtSignal()
+    Leaved = pyqtSignal()
+    __leavedString = ''
+    __entredString = ''
+    margin = 0
+
+    def __init__(self, parent: typing.Optional[QWidget] = ... , Duration:int=250) -> None:
+        super().__init__(parent)
+        self.Animation = QPropertyAnimation(self,b"Margin",self)
+        self.Animation.setDuration(Duration)
+        self.Animation.setStartValue(0)
+        self.Animation.setEndValue(5)
+
+    def enterEvent(self, a0: QEvent) -> None:
+        self.Enterd.emit()
+        self.setText(self.__entredString)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.Animation.setDirection(self.Animation.Direction.Forward)
+        self.Animation.start()
+        return super().enterEvent(a0)
+
+        
+    def leaveEvent(self, a0: QEvent) -> None:
+        self.Leaved.emit()
+        self.setText(self.__leavedString)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        self.Animation.setDirection(self.Animation.Direction.Backward)
+        self.Animation.start()
+        
+        return super().leaveEvent(a0)
+
+    def setTexts(self,leaved:str,entred:str):
+        self.__leavedString = leaved
+        self.__entredString = entred
+
+    def setMiniWidthHeight(self,miniWidth,miniHeight):
+        self.miniWidth = miniWidth
+        self.miniHeight = miniHeight
+
+    def setMaxWidthHeight(self,maxWidth,maxHeight):
+        self.maxWidth = maxWidth
+        self.maxHeight = maxHeight
+
+    @pyqtProperty(int)
+    def Margin(self):
+        return self.margin
+
+    @Margin.setter
+    def Margin(self,margin):
+        self.margin = margin
+        style = f"""margin:{margin}px;"""
+        stylesheet = self.styleSheet() + style
+        self.setStyleSheet(stylesheet)
+
+
+class QSideMenuEnteredLeaved(QWidget):
+
+    Buttons:typing.List[MyQToolButton] = []
+    Pages:typing.List[QWidget] = []
+    Toggles:typing.List[AnimatedToggle] = []
+    ToggleLabels:typing.List[QLabel] = []
+
+    def __init__(
+            self,
+            parent:QWidget,
+            Title:str = "" ,
+            ButtonsCount:int = 2,
+            PagesCount:int = 2 ,
+            ToggleCount:int = 2 ,
+            ButtonsSpacing:int = 3 ,
+            Duration:int = 400 ,
+            DefultIconPath:str = None ,
+            ClickIconPath:str = None ,  
+            StretchMenuForStacked:tuple=(1,5) ,
+            StretchTopForBottomFrame:tuple = (1,6),
+            ButtonsFrameFixedwidth:int=None,
+            ButtonsFrameFixedwidthMini:int=30,
+            TopFrameFixedHight:int= 40,
+            ExitButtonIconPath:str=None ,
+            ButtonsFixedHight:int=None , 
+            MaxButtonIconPath:str = None ,
+            Mini_MaxButtonIconPath:str = None ,
+            MiniButtonIconPath:str = None,
+            **kwargs,
+
+        ) -> None:
+        super().__init__(parent)
+        self.ButtonsFrameFixedwidthMini = ButtonsFrameFixedwidthMini
+        self.DefultIconPath = DefultIconPath
+        self.ClickIconPath = ClickIconPath
+        self.verticalLayout = QVBoxLayout(parent)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setSpacing(0)
+        self.TopFrame = MyQFrame(parent,Draggable=True)
+        self.TopFrame.setFixedHeight(TopFrameFixedHight) if TopFrameFixedHight != None else None
+        self.horizontalLayout_2 = QHBoxLayout(self.TopFrame)
+        self.MainLabel = QLabel(self.TopFrame)
+        self.MainLabel.setText(Title)
+        # self.MainLabel.setStyleSheet(Styles.Label.Normal)
+        self.horizontalLayout_2.addWidget(self.MainLabel, 4 ,Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignCenter)
+        self.MiniButton = QPushButton(self.TopFrame)
+        self.MiniButton.setFlat(True)
+        self.MiniButton.setFixedSize(QSize(20,20))
+        self.MiniButton.setIcon(QIcon(MiniButtonIconPath)) if MiniButtonIconPath != None else None
+        self.horizontalLayout_2.addWidget(self.MiniButton, 0,Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
+        self.MiniButton.clicked.connect(parent.parent().showMinimized)
+        self.MaxButton = QPushButton(self.TopFrame)
+        self.MaxButton.setFlat(True)
+        self.MaxButton.setFixedSize(QSize(20,20))
+        self.MaxButton.setIcon(QIcon(MaxButtonIconPath)) if MaxButtonIconPath != None else None
+        self.MaxButton.clicked.connect(lambda : self.max_mini(self.parent().parent(),MaxButtonIconPath,Mini_MaxButtonIconPath,ButtonsFrameFixedwidth))
+        self.horizontalLayout_2.addWidget(self.MaxButton, 0,Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
+        self.ExitButton = QPushButton(self.TopFrame)        
+        self.ExitButton.setFlat(True)
+        self.ExitButton.setFixedSize(QSize(20,20))
+        self.ExitButton.setIconSize(QSize(20,20))
+        self.ExitButton.setIcon(QIcon(ExitButtonIconPath)) if ExitButtonIconPath != None else None
+        self.ExitButton.clicked.connect(parent.close)
+        self.ExitButton.clicked.connect(QCoreApplication.instance().quit)        
+        self.horizontalLayout_2.addWidget(self.ExitButton, 0, Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignCenter)
+        self.horizontalLayout_2.setContentsMargins(5,5,6,5)
+        self.verticalLayout.addWidget(self.TopFrame)
+        self.BottomFrame = MyQFrame(parent)
+        self.horizontalLayout = QHBoxLayout(self.BottomFrame)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout.setSpacing(0)
+        self.ButtonsFrame = MyQFrame(self.BottomFrame)
+        self.ButtonsFrame.setFixedWidth(ButtonsFrameFixedwidth) if ButtonsFrameFixedwidth != None else None
+        self.verticalLayout_2 = QVBoxLayout(self.ButtonsFrame)
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_2.setSpacing(ButtonsSpacing)
+        self.ExitButton.setStyleSheet(Styles.PushButton.Normal)
+        self.MaxButton.setStyleSheet(Styles.PushButton.Normal)
+        self.MiniButton.setStyleSheet(Styles.PushButton.Normal)
+        for index in range(ButtonsCount) :
+            Button = MyQToolButton(self.ButtonsFrame)
+            Button.setTexts(f'{index}',f"Button {index}") 
+            Button.setAutoRaise(True)
+            Button.setStyleSheet(Styles.PushButton.Normal)
+            #Button.setCheckable(True)
+            sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+            sizePolicy.setHeightForWidth(Button.sizePolicy().hasHeightForWidth())
+            Button.setFixedHeight(ButtonsFixedHight) if ButtonsFixedHight != None else None
+            Button.setSizePolicy(sizePolicy)
+            if index == ButtonsCount - 1 :
+                self.verticalLayout_2.addWidget(Button ,1, Qt.AlignmentFlag.AlignTop)
+            else :
+                self.verticalLayout_2.addWidget(Button ,0, Qt.AlignmentFlag.AlignTop)
+            self.Buttons.append(Button)
+ 
+        for i in range(ToggleCount):
+            ToggleLabel = QLabel(self.ButtonsFrame)
+            self.verticalLayout_2.addWidget(ToggleLabel,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
+            self.ToggleLabels.append(ToggleLabel)
+            Toggle = AnimatedToggle(self.ButtonsFrame)
+            sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            Toggle.setSizePolicy(sizePolicy)
+            self.verticalLayout_2.addWidget(Toggle,0,Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignCenter)
+            self.Toggles.append(Toggle)
+            Toggle.hide()
+            ToggleLabel.hide()
+
+        self.horizontalLayout.addWidget(self.ButtonsFrame)
+        self.stackedWidget = QStackedWidget(self.BottomFrame)
+        for Page in range(PagesCount):
+            Page = QWidget()
+            self.stackedWidget.addWidget(Page)
+            self.Pages.append(Page)
+        self.horizontalLayout.addWidget(self.stackedWidget)
+        self.horizontalLayout.setStretch(0 , StretchMenuForStacked[0])
+        self.horizontalLayout.setStretch(1, StretchMenuForStacked[1])
+        self.verticalLayout.addWidget(self.BottomFrame)
+        self.verticalLayout.setStretch(0 ,StretchTopForBottomFrame[0])
+        self.verticalLayout.setStretch(1 , StretchTopForBottomFrame[1])
+        self.MAXWIDTH = self.ButtonsFrame.width()
+        self.NORMALWIDTH = self.MAXWIDTH
+        self.Animation = QPropertyAnimation(self,b"Width",self)
+        self.Animation.setDuration(Duration)
+        self.ButtonsFrame.Enterd.connect(self.entered)
+        self.ButtonsFrame.Leaved.connect(self.leaved)
+        self.ButtonsFrame.setFixedWidth(self.ButtonsFrameFixedwidthMini)
+
+        self.setCurrentPage(0)
+    
+    @pyqtProperty(int)
+    def Width(self):
+        return self.ButtonsFrame.width()
+    
+    @Width.setter
+    def Width(self,val):
+        self.ButtonsFrame.setFixedWidth(val)
+        
+    def leaved(self)-> None:
+        self.Animation.setStartValue(self.ButtonsFrameFixedwidthMini)
+        self.Animation.setEndValue(self.MAXWIDTH)
+        self.Animation.setDirection(self.Animation.Direction.Backward)
+        self.Animation.start()
+        for tog in self.Toggles:
+            tog.hide()
+        for lbl in self.ToggleLabels:
+            lbl.hide()
+
+    def entered(self):
+        self.Animation.setStartValue(self.ButtonsFrameFixedwidthMini)
+        self.Animation.setEndValue(self.MAXWIDTH)
+        self.Animation.setDirection(self.Animation.Direction.Forward)
+        self.Animation.start()
+        for tog in self.Toggles:
+            tog.show()
+        for lbl in self.ToggleLabels:
+            lbl.show()
+
+
+    @pyqtSlot(int,str)
+    def setButtonText(self,index:int,text:str)-> None:
+        self.getButton(index).setText(text)
+
+    @pyqtSlot(int,str)
+    def setButtonIcon(self,index:int,IconPath:str)-> None:
+        self.getButton(index).setIcon(QIcon(IconPath))
+        
+    def Connections(self,index:int,func):
+        self.getButton(index).clicked.connect(func)
+
+    def getButton(self,index:int)-> MyQToolButton :
+        return self.Buttons[index]
+
+    def getPage(self,index:int)-> QWidget:
+        return self.Pages[index]
+
+    def getToggle(self,index:int)-> AnimatedToggle :
+        return self.Toggles[index]
+
+    def getToggleLabel(self,index:int) -> QLabel:
+        return self.ToggleLabels[index]
+
+    @pyqtSlot(int)
+    def setCurrentPage(self,index:int):
+        self.stackedWidget.setCurrentIndex(index)
+
+    def max_mini(self , parent:QMainWindow , path1:str , path2:str , Fixedwidth):
+        if parent.isMaximized():
+            parent.showNormal()
+            self.MaxButton.setIcon(QIcon(path1))
+            self.MAXWIDTH = self.NORMALWIDTH
+        else :
+            parent.showMaximized()
+            self.MaxButton.setIcon(QIcon(path2))
+            self.MAXWIDTH = Fixedwidth + 150 if Fixedwidth is int else 200
+
+
+    def setToggleText(self,index:int,text:str=None) -> AnimatedToggle:
+        self.ToggleLabels[index].setText(text) if text != None else None
+        return self.Toggles[index]
+
+    def connect_Button_Page(self,btn:MyQToolButton,pageIndex:int):
+        btn.clicked.connect(lambda : self.setCurrentPage(pageIndex))
+        
+## ------------- Custom Thread class
+class MyThread(QThread):
+
+    statues = pyqtSignal(str)
+    msg = pyqtSignal(str)
+
+    def __init__(self) -> None:
+        super().__init__()
+        
+    def kill(self,msg:str=None):
+        """Method to kill Thread when it Running"""
+        if self.isRunning():
+            self.terminate()
+            self.wait()
+        if msg != None :
+            self.msg.emit(msg)
+        self.statues.emit("Stopped")
+
+    def start(self, priority: 'QThread.Priority' = ...) -> None:
+        """Method to start Thread when it NotRunning"""
+        if self.isRunning():
+            pass
+        else:
+            return super().start(priority)
+
+
+class DateOperations(object):
+        
+
+    class TimeFlags():
+        Epoch = 'stamp'
+        DateWithTime = 'DateWithTime'
+        DateOnly = 'DateOnly'
+        TimeOnly = 'TimeOnly'
+
+    def __init__(self) -> None:
+        pass
+
+    def translateTimeFromStampToDate(self,stamp) -> datetime.datetime :
+        epoch_time = round(stamp,ndigits=0)
+        return datetime.datetime.fromtimestamp( epoch_time )
+
+    def getCurrentDate(self,flag:TimeFlags = TimeFlags.DateWithTime):
+        """Flag That Mean Type Of Returned Value
+        \nExample:
+            date = DateOperations()\n
+            date.currentDate(date.TimeFlags.DateWithTime)\n
+            'That Will Return current Date and Time '......
+        """
+        if flag == self.TimeFlags.Epoch:
+            return time.time()
+        elif flag == self.TimeFlags.DateWithTime :
+            return str(self.translateTimeFromStampToDate(time.time()))
+        elif flag == self.TimeFlags.DateOnly :
+            return str(self.translateTimeFromStampToDate(time.time()).date())
+        elif flag == self.TimeFlags.TimeOnly:
+            return str(self.translateTimeFromStampToDate(time.time()).time())
+
+
+class Generator():
+    lista = [str(x) for x in range(10)]
+    MainText = ''.join(lista) + string.ascii_letters
+    UserAgentList = """
 Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/37.0.2062.94 Chrome/37.0.2062.94 Safari/537.36
 Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.85 Safari/537.36
 Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko
@@ -1262,157 +2170,115 @@ Mozilla/5.0 (Windows NT 6.3; Win64; x64; Trident/7.0; MAARJS; rv:11.0) like Geck
 Mozilla/5.0 (Linux; Android 5.0; SAMSUNG SM-N900T Build/LRX21V) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/2.1 Chrome/34.0.1847.76 Mobile Safari/537.36
 Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) GSA/7.0.55539 Mobile/12H143 Safari/600.1.4
 """.split('\n')
-        self.Proxies = []
-        self.Errors = []
-        # ------------- Prapares ----------------
-        self.header = self.Headers[self.vendor]
-        self.payload = self.Payloads[self.vendor]
-        # ------------- Database Connections ------------------
-        self.Data = DataBaseConnection(vendor)
-        self.ProxyAPI = ProxyFilterAPI()
 
-        super().__init__()
+    def genText(self,length):
+        return "".join([self.MainText[random.randint(0,38)] for x in range(length)])
 
+    def generateClientID(self):
+        return self.genText(8) + '-' + self.genText(4) + '-' + self.genText(4) + '-' + self.genText(4) + '-' + self.genText(14)
 
-    def convertDataframeToPhonesList(self,df:pandas.DataFrame)->list:
-        response = []
-        for row in range(0,len(df)):
-            res = (f"{df.iloc[row][0]}",f"{df.iloc[row][1]}")
-            if f"{df.iloc[row]}" != 'None' :
-                response.append(res)
-        return response
+    def getRandomUserAgent(self) -> str :
+        return str(self.UserAgentList[random.randint(0,len(self.UserAgentList)-2)]).replace("\n","")
 
 
-    def sendRequest(self,AreaCode:str,PhoneNumber:str,proxy:typing.Optional[dict]=None,userAgent:typing.Optional[str]=None) -> Response:
-        if len(AreaCode) == 1 :
-            AreaCode = f'0{AreaCode}'
+class ProxyFilterAPI(object): # From  https://free-proxy-list.net/ 
+    Yes = 'yes'
+    No = 'no'
+    class ProxyFlags():
+        RandomProxy = 'RandomProxy'
+        NoProxy = 'NoProxy'
 
-        session = requests.Session()
-        session.proxies = proxy if proxy != None else {}
-        # UserAgent Logic Method 
-        if userAgent != None :
-            if userAgent == self.Flags.RandomUserAgent:
-                userAgent = self.generator.getRandomUserAgent() #self.getRandomUserAgent()
-            else :
-                userAgent = userAgent
-        else :
-            userAgent = self.DEFAULT_USER_AGENT
+    def __init__(self) -> None:
+        self.Threads = []  # List Of Threads that is Working
+        self.Errors = []  # Errors in https request 
+        self.ProxiesList = [] # Good Proxies
+        self.start = 0
+        self.end = 0
 
-        # Proxy Logic Method 
-        if proxy != None :
-            if proxy == self.Flags.RandomProxy :
-                proxy = self.getRandomProxy()
-            else:
-                proxy = proxy
-        else :
-            proxy = {}
-        print(proxy)
-        self.header['user-agent'] = userAgent
-        session.headers = self.header
-        session.proxies = proxy
-        t1 = time.time()
-        response = session.post(
-            url = self.URLs[self.vendor],
-            json = self.reshapePayload(
-                AreaCode = AreaCode ,
-                PhoneNumber = PhoneNumber ,
-            ) ,
-        )
-        t2 = time.time()
-        if response.status_code == 429 :
-            self.msg.emit(f'خدنا بان يا اخوياااا -_-')
-            self.stop.emit(True)
+
+    def getFreshProxyList(
+        self,
+        httpsFilter:str ,
+        ExportToTXT:bool= False ,
+        ):
+        ProxyList = []
+        response = requests.get(url = 'https://free-proxy-list.net/')
+        self.soup = BeautifulSoup(response.text,'html.parser')
+        table = self.soup.find("tbody")
+        rows = table.find_all("tr")
+        for row in rows :
+            row = row.find_all('td')
+            ip = row[0].text
+            port = row[1].text
+            https = row[6].text
+            #print(f"{ip}:{port} --> https:{https}")
+            if https == httpsFilter :
+                ip_port = f"{ip}:{port}"
+                ProxyList.append(ip_port)
+        if ExportToTXT == True :
+            with open("Proxies.txt",'w+')as file :
+                file.writelines([ip_port+"\n" for ip_port in ProxyList])
+                file.close()
+        return ProxyList
+
+
+    def testProxy(self,ip_port):
+        proxy = {'http':ip_port,'https':ip_port}
         try:
-            response = response.json()
-            con = True
+            response = requests.get(url = "http://httpbin.org/ip",proxies= proxy ,timeout = 5)
+            self.ProxiesList.append(ip_port)
         except Exception as e :
-            con = False
+            self.Errors.append(e)
 
-        if con:
-            response['PhoneNumber'] = PhoneNumber
-            response['AreaCode'] = AreaCode
-            response['TimeScraping'] = t2-t1
 
-            self.solveResponse(
-                response = response ,
-                )
-                
+    def threadingRequstFilter(self,ip_portLists):
+        for iplist in ip_portLists:
+            task = thr.Thread(target = self.testProxy,args = (iplist,))
+            self.Threads.append(task)
+            task.start()
 
-    def setProxies(self,Proxies):
-        self.Proxies = Proxies
+    def wait(self)-> None:
+        for task in self.Threads:
+            if task.is_alive() :
+                task.join()
+
+    def autoAPI(self,wait:bool= True):
+        self.ProxiesList = []
+        firstlist = self.getFreshProxyList(httpsFilter=self.Yes)
+        self.threadingRequstFilter(firstlist)
+        if wait == True :
+            self.wait()
+        self.start = time.time()
+        return self.ProxiesList
         
-    def getRandomProxy(self):
-        print(len(self.Proxies))
-        return str(self.Proxies[random.randint(0,len(self.Proxies)-2)])
+    def getRandomProxyWithTimeOut(self,timeout:int): # Timeout (Sec)
+        self.end = time.time()
+        if self.start == 0 or round(self.end - self.start,ndigits=0) >= timeout :
+            self.autoAPI()
+            # print(self.ProxiesList)
+            return self.ProxiesList[random.randint(0,len(self.ProxiesList)-1)]
+        else :
+            return self.ProxiesList[random.randint(0,len(self.ProxiesList)-1)]
+            
 
-    def reshapePayload(self,AreaCode:str,PhoneNumber:str):
-        payload = self.payload
-        # EG_+2035242441  # "EG_+20402917386"
-        payload['payload']['phone_number'] = f"EG_+20{AreaCode}{PhoneNumber}"
-        return payload
+class Checking(QObject):
+    status = pyqtSignal(str)
+    msg = MyMessageBox() #pyqtSignal(str)
+    LeadSignal = pyqtSignal(dict)
 
-    def solveResponse(self,AreaCode:str,PhoneNumber:str,response:Response,time)-> dict:
-        print("-"*20)
-        if response.status_code == 429 :
-            self.msg.emit(f'خدنا بان يا اخوياااااا -_-')
-            self.stop.emit(True)
-        else:
-            try:
-                response = response.json()
-                con = True
-            except Exception as e :
-                con = False
-            Lead = {}
-            if con:
-                if response['code'] == self.ResponseStatus.Success :
-                    if len(response['response']) == self.ResponseLength.Normal:
-                        # First Response (Normal)
-                        Lead['statusOfResponse'] = response["code"]  # "SUCCESS"
-                        Lead['Price'] = response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2] 
-                        Lead['Server Message'] = response["response"]["elements"][0]["label"]
-                        Lead['AreaCode'] = AreaCode #response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
-                        Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
-                        Lead['HasUnpaidInvoices'] = 'يوجد فاتورة'
-
-                    elif len(response['response']) == self.ResponseLength.Second :
-                        # Second Response 
-                        Lead['statusOfResponse'] = response["code"] # "SUCCESS"
-                        Lead['Price'] = str(response["response"]['payment_details'][0]['raw_value'])
-                        Lead['Server Message'] = 'Redirect Page'
-                        Lead['AreaCode'] = AreaCode #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][:2]
-                        Lead['PhoneNumber'] = PhoneNumber #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][2:]
-                        Lead['HasUnpaidInvoices'] = 'يوجد فاتورة'
-
-                elif response['code'] == self.ResponseStatus.Faild :
-                    # ClientNotFound
-                    Lead['statusOfResponse'] = response['code']  # 'INVALID_FIELDS'
-                    Lead['Price'] = str(None)
-                    Lead['Server Message'] = response['response']
-                    Lead['AreaCode'] = AreaCode
-                    Lead['PhoneNumber'] = PhoneNumber 
-                    Lead['HasUnpaidInvoices'] = 'لايوجد'
-
-                #if not self.Data.exist(self.vendor,{'PhoneNumber':Lead['PhoneNumber'],'AreaCode':Lead['AreaCode']}):
-                Lead['DateScraping'] = f"{datetime.datetime.now().date()} |{datetime.datetime.now().hour}:{datetime.datetime.now().minute}"
-                Lead['TimeScraping'] = str(round(time,ndigits =2))
-                self.Data.addCustomer(
-                    vendor = self.vendor ,
-                    **Lead
-                )
-                self.Lead.emit(Lead)
-            else:
-                Lead['Price'] = str(None) #response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2] 
-                Lead['AreaCode'] = AreaCode #response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
-                Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
-                Lead['Server Message'] = '' ########
-                Lead['HasUnpaidInvoices'] = 'لايوجد فاتورة'
-                self.Data.addCustomer(
-                    vendor = self.vendor ,
-                    **Lead
-                )
-                self.Lead.emit(Lead)
-
-
-# m = BaseJumia("WE")
-# m.getFreshProxyList()
-
+    def __init__(self) -> None:
+        super().__init__()
+        self.internetConnected = False
+    
+    def haveInternet(self,showmsg:bool=True,msg:str="No internet !")->bool:
+        try :
+            requests.get('https://www.google.com/')
+            self.internetConnected = True
+            print(True)
+        except Exception as e :
+            self.internetConnected = True
+            print(f"No internet ! {e}")
+            self.status.emit("msg")
+            if showmsg :
+                self.msg.showCritical(msg)
+        return self.internetConnected
