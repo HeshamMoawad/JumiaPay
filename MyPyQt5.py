@@ -913,12 +913,13 @@ class MyThread(QThread):
     def __init__(self) -> None:
         super().__init__()
         
-    def kill(self,msg:str):
+    def kill(self,msg:str=None):
         """Method to kill Thread when it Running"""
         if self.isRunning():
             self.terminate()
             self.wait()
-        self.msg.emit(msg)
+        if msg != None :
+            self.msg.emit(msg)
         self.statues.emit("Stopped")
 
     def start(self, priority: 'QThread.Priority' = ...) -> None:

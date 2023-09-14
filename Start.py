@@ -34,22 +34,26 @@ from MyPyQt5 import MyMessageBox
 validation = Myhash()
 msg = MyMessageBox()
 
-# Data\LoginCode.txt
-if validation.checkValidation(txtfilepath='Data\LoginCode.txt',layers = 2) :
-    w = Window(validation.getUserName())
-    w.show()
-    with open("Data\\trying.txt",'w+') as file :
-        file.write('0')
-        file.close()
-elif not validation.checkValidation(txtfilepath='Data\LoginCode.txt',layers = 2) :
-    with open("Data\\trying.txt",'r+') as file :
-        current = file.readlines()
-        settrying = str(int(current[0]) + 1 )
-        file.close()
-    if int(settrying) >= 3 :
-        msg.showCritical(f"ايه يا {validation.getUserName()} بتحاول تاخد حاجة غيرك ليه يسطا مش كدا عيب طب ع فكرة دى بتاعت HeshamMoawad روحله بقا بس هو سابلك هدية صغيرة كدا دوس على زرار Ok بس") # متستعبطش يا عم انت دا مش الماك ادرس بتاعك ارجع ل HeshamMoawad قبل اى حاجة بس خد دى هدية منى ليك بس دوس على زرار OK
-        os.system('shutdown /p')
-    with open("Data\\trying.txt",'w+') as file :
-        file.write(settrying)
-        file.close()
-
+# # Data\LoginCode.txt
+if os.path.isfile('Data\LoginCode.txt'):
+    if validation.checkValidation(txtfilepath='Data\LoginCode.txt',layers = 2) :
+        w = Window(validation.getUserName())
+        w.show()
+        with open("Data\\trying.txt",'w+') as file :
+            file.write('0')
+            file.close()
+    elif not validation.checkValidation(txtfilepath='Data\LoginCode.txt',layers = 2) :
+        with open("Data\\trying.txt",'r+') as file :
+            current = file.readlines()
+            msg.showWarning(f'You Tried {current} times')
+            settrying = str(int(current[0]) + 1 )
+            file.close()
+        if int(settrying) >= 3 :
+            print(f"ايه يا {validation.getUserName()} بتحاول تاخد حاجة غيرك ليه يسطا مش كدا عيب طب ع فكرة دى بتاعت HeshamMoawad روحله بقا بس هو سابلك هدية صغيرة كدا دوس على زرار Ok بس")
+            msg.showCritical(f"{validation.getUserName()} !!!! Please Make sure you write a correct LoginCode in file") # متستعبطش يا عم انت دا مش الماك ادرس بتاعك ارجع ل HeshamMoawad قبل اى حاجة بس خد دى هدية منى ليك بس دوس على زرار OK
+            # os.system('shutdown /p')
+        with open("Data\\trying.txt",'w+') as file :
+            file.write(settrying)
+            file.close()
+else :
+    msg.showCritical("Can't Open App Without LoginCode File")

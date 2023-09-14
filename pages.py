@@ -4,7 +4,7 @@ from MyPyQt5 import (AnimatedToggle,MyMessageBox,
     )
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from mainClass import JumiaPay
+# from mainClass import JumiaPay
 import pyperclip , typing 
 from datetime import datetime
 from styles import Styles
@@ -39,6 +39,12 @@ from styles import Styles
 
 ####################################################
 
+class Vendors():
+    We = 'WE'
+    Etisalat = 'Etisalat'
+    # Orange = 'Orange'
+    Noor = 'Noor'
+    All = [We,Etisalat,Noor]#,Orange
 
 
 
@@ -46,7 +52,7 @@ class Page1(QObject):
     msg = MyMessageBox()
     def __init__(self,parent:QObject) -> None:
         super().__init__()
-        self.ExportRange = {'AreaCode':0,'PhoneNumber':1,'HasUnpaidInvoices':2,'Server Message':3 ,'Price':4,'TimeScraping':5}
+        self.ExportRange = {'AreaCode':0,'PhoneNumber':1,'HasUnpaidInvoices':2,'ResponseMessage':3 ,'price':4,}
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(parent)
         self.frame_4 = QtWidgets.QFrame(parent)
         self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -105,7 +111,7 @@ class Page1(QObject):
         self.counterlabel = QtWidgets.QLabel(self.trecounterFrame)
         self.counterlabel.setText("Counter: 0")
         self.treeWidget = MyQTreeWidget(self.frame,counterLabel=self.counterlabel)
-        self.treeWidget.setColumns(['AreaCode','PhoneNumber','HasUnpaidInvoices','Server Message','Price','TimeScraping'])
+        self.treeWidget.setColumns(['AreaCode','PhoneNumber','HasUnpaidInvoices','ResponseMessage','price'])
         self.treeWidget.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         self.treeWidget.customContextMenuRequested.connect(self.menu)
         self.treeWidget.setColumnWidth(0,70)
@@ -238,15 +244,15 @@ class Page2(QObject):
         self.timeRequestFrame = QtWidgets.QFrame(self.secFrame)
         self.timeRequestlabel = QtWidgets.QLabel(self.timeRequestFrame)
         self.timeRequestlabel.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.timeRequestlabel.setText('Time To Request (Sec)')
+        self.timeRequestlabel.setText('Threads Count')
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.timeRequestFrame)
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_2.addWidget(self.timeRequestlabel)#, 0, QtCore.Qt.AlignHCenter
-        self.timeRequestspinbox = QtWidgets.QSpinBox(self.timeRequestlabel)
-        self.timeRequestspinbox.setMinimum(0)
-        self.timeRequestspinbox.setMaximum(1000)
-        self.timeRequestspinbox.setValue(4)
-        self.horizontalLayout_2.addWidget(self.timeRequestspinbox)
+        self.threadsCount = QtWidgets.QSpinBox(self.timeRequestlabel)
+        self.threadsCount.setMinimum(1)
+        self.threadsCount.setMaximum(100)
+        self.threadsCount.setValue(100)
+        self.horizontalLayout_2.addWidget(self.threadsCount)
         self.horizontalLayout_2.setStretch(0, 3)
         self.horizontalLayout_2.setStretch(1, 2)
         self.horizontalLayout_16.addWidget(self.timeRequestFrame) ######################
@@ -257,7 +263,8 @@ class Page2(QObject):
         self.vendorlabel.setText('Vendor')
         self.horizontalLayout.addWidget(self.vendorlabel, 0, QtCore.Qt.AlignHCenter)
         self.vendorComboBox = QtWidgets.QComboBox(self.vendorFrame)
-        self.vendorComboBox.addItems(JumiaPay.Vendors.All)
+        # self.vendorComboBox.currentTextChanged.connect(self.setve)
+        self.vendorComboBox.addItems(Vendors.All)
         self.horizontalLayout.addWidget(self.vendorComboBox)
         self.horizontalLayout.setStretch(0, 3)
         self.horizontalLayout.setStretch(1, 4)
@@ -428,14 +435,13 @@ class Page2(QObject):
 
 
 
-    def exportrange(self):
+    def exportrange(self): # ['AreaCode','PhoneNumber','HasUnpaidInvoices','ResponseMessage','price']
         result = {}
         result['AreaCode'] = 0 if self.areaCodetoggle.isChecked() else None
         result['PhoneNumber'] = 1  if self.phonetoggle.isChecked() else None
         result['HasUnpaidInvoices'] = 2 if self.hasInvotoggle.isChecked() else None
-        result['Server Message'] = 3  if self.serverMsgtoggle.isChecked() else None
-        result['Price'] = 4  if self.pricetoggle.isChecked() else None
-        result['TimeScraping'] = 5  if self.timeScrapingtoggle.isChecked() else None
+        result['ResponseMessage'] = 3  if self.serverMsgtoggle.isChecked() else None
+        result['price'] = 4  if self.pricetoggle.isChecked() else None
         self.ExportRangeSignal.emit(result)
 
     def getFileDir(self):

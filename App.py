@@ -9,12 +9,13 @@ from MyPyQt5 import (
                 pyqtSignal ,
                 QShortcut ,
                 QKeySequence ,
+                MyMessageBox
 
                     )
 import openpyxl
-import pandas
-from mainClass import JumiaPay 
-import time
+import pandas , numpy
+from mainClass import BaseJumia , requests
+import time , os , typing , threading
 from styles import Styles
 
 
@@ -51,6 +52,8 @@ from styles import Styles
 
 
 class Window (MyQMainWindow):
+    threads:typing.List[MyThread] = []
+    msg = MyMessageBox()
     def __init__(self,name:str) -> None:
         self.Name = name
         super().__init__()
@@ -58,6 +61,7 @@ class Window (MyQMainWindow):
     def SetupUi(self):
         self.setWindowTitle(self.Name)
         self.dataframe = pandas.DataFrame()
+        self.dataframeList:typing.List[pandas.DataFrame] = []
         self.setFrameLess()
         self.resize(650,500)
         self.setStyleSheet(Styles().main)
@@ -91,149 +95,171 @@ class Window (MyQMainWindow):
         self.Setting.ExportRangeSignal.connect(self.DashBoard.setExportRange)
         self.Menu.connect_Button_Page(btn = self.DashBoardBtn ,pageIndex = 0)
         self.Menu.connect_Button_Page(btn = self.SettingBtn ,pageIndex = 1)
-        # Thread Part ------
-        self.WorkingThread = WorkingThread()
-        self.WorkingThread.setMainClass(self)
-        self.WorkingThread.msg.connect(self.msg.showInfo)
-        self.WorkingThread.statues.connect(self.Menu.MainLabel.setText)
-        self.WorkingThread.Lead.connect(self.DashBoard.treeWidget.appendDataAsDict)
-        self.WorkingThread.WaitingSignal.connect(self.DashBoard.updateWaiting)
-        self.WorkingThread.DataFrame.connect(self.updateWaitingDF)
-        self.DashBoard.toolButton.clicked.connect(self.WorkingThread.start)
-        self.DashBoard.toolButton_2.clicked.connect(lambda : self.WorkingThread.kill('Stopped Succesfully'))
+        self.jumia = BaseJumia(
+            vendor = self.Setting.vendorComboBox.currentText() ,
+            timeout = 5
+            )
+        self.Setting.vendorComboBox.currentTextChanged.connect(self.setVendor)
+        # self.threadstart = threading.Thread(target=self.start)
+        self.DashBoard.toolButton.clicked.connect(self.runThread)
+        self.DashBoard.toolButton_2.clicked.connect(self.kill)
         self.darkMode(False)
         self.clear = QShortcut(QKeySequence("ctrl+r"),self)
-        self.clear.activated.connect(lambda: self.updateWaitingDF(df=pandas.DataFrame() , clear=True))
-
+        self.clear.activated.connect(lambda: self.updateWaitingDF(signal={} , clear=True))
         return super().SetupUi()
+    
+    def setVendor(self):
+        self.jumia = BaseJumia(
+            vendor = self.Setting.vendorComboBox.currentText() ,
+            timeout = 5
+            )
 
+    def kill(self):
+        for thread in self.threads :
+            thread.kill(msg=None)
+        self.Menu.MainLabel.setText(f"Stopped")
+        self.msg.showInfo("Stopped Successfully")
 
-
-    def updateWaitingDF(self,df:pandas.DataFrame ,clear:bool=False):
-        self.dataframe = df
-        self.DashBoard.updateWaiting(len(df))
+    def updateWaitingDF(self,signal:dict ,clear:bool=False):
+        if clear == False :
+            self.dataframeList[signal['index']] = signal["dataframe"]
+            self.dataframe = pandas.concat(self.dataframeList)
+            self.DashBoard.updateWaiting(len(self.dataframe))
         if clear == True :
             self.dataframe = pandas.DataFrame()
-            self.DashBoard.updateWaiting(0)
+            self.DashBoard.updateWaiting(length = 0)
+            self.dataframeList.clear()
 
     def reshapeExelData(self,excelfile,sheetname):
         wb = openpyxl.load_workbook(excelfile)
-        ws = wb[sheetname]
+        try :
+            ws = wb[sheetname]
+        except Exception as e :
+            self.msg.showWarning(f"Sheet Name Not Found \n Error in : {e}")
         df = pandas.DataFrame(ws.values)
         df.dropna(inplace=True)
         df[df.columns[0]].apply(str)
         df[df.columns[1]].apply(str)
         df = df[1:]
-        self.updateWaitingDF(df)
-
+        self.dataframe = df
+        self.DashBoard.updateWaiting(length=len(df))
+        # self.updateWaitingDF(signal=dict(index=))
+        
     def darkMode(self,dark:bool=True):
         if dark == False :
             self.Menu.TopFrame.setStyleSheet(Styles.Backgrounds.Orange)
             self.Menu.ButtonsFrame.setStyleSheet(Styles.Backgrounds.Orange)
-            # self.mainWidget.setStyleSheet(Styles.Backgrounds.DarkOrange)
         elif dark == True :
             self.Menu.TopFrame.setStyleSheet(Styles.Backgrounds.DarkOrange)
             self.Menu.ButtonsFrame.setStyleSheet(Styles.Backgrounds.DarkOrange)
 
 
+    def runThread(self):
+        # self.threadstart = threading.Thread(target=self.start)
+        self.Menu.MainLabel.setText("Starting ...")
+        fileDir = self.Setting.lineEditDirectory.text()
+        if fileDir !=  "" and os.path.isfile(fileDir):
+            sheetname = 'Sheet1' if self.Setting.lineEditSheetName.text() == '' else self.Setting.lineEditSheetName.text() 
+            # self.threadData = threading.Thread(target=self.reshapeExelData , args=(fileDir,sheetname,))
+            # self.threadData.start()
+            self.reshapeExelData(excelfile = fileDir, sheetname = sheetname)
+            self.start()
+            # if not self.threadstart.is_alive():
+            #     self.threadstart.start()
+        elif fileDir ==  "":
+            if self.dataframe.empty :
+                self.msg.showCritical(f'No Phones In Waiting')
+            else :
+                self.start()
+                # if not self.threadstart.is_alive():
+                #     self.threadstart.start()
+                # self.WorkingThread.setDataFrame(self.dataframe)
+                # self.WorkingThread.start(MyThread.Priority.InheritPriority)
 
-    
+    def start(self):
+        # self.threadData.join()
+        self.dataframeList =  self.splitDataFrame(self.dataframe,self.Setting.threadsCount.value())
+        for index in range(len(self.dataframeList)):
+            # print(type(self.dataframeList[index]))
+            Thread = WorkingThread()
+            Thread.setMainClass(self)
+            Thread.setJumiaObj(self.jumia)
+            Thread.setDataFrame(self.dataframeList[index])
+            Thread.setIndex(index)#self.dataframeList.index(df)
+            Thread.msg.connect(self.msg.showInfo)
+            Thread.statues.connect(self.Menu.MainLabel.setText)
+            Thread.Lead.connect(self.DashBoard.treeWidget.appendDataAsDict)
+            Thread.WaitingSignal.connect(self.DashBoard.updateWaiting)
+            Thread.DataFrameSignal.connect(self.updateWaitingDF)
+            # Thread.setDataFrame(self.dataframe)
+            self.threads.append(Thread)
+            Thread.start(MyThread.Priority.InheritPriority)
+
+
+
+    def splitDataFrame(self,df:pandas.DataFrame,nArray):
+        return  numpy.array_split(df,nArray)
+
+
 class WorkingThread(MyThread):
     Lead = pyqtSignal(dict)
     WaitingSignal = pyqtSignal(int)
-    DataFrame = pyqtSignal(pandas.DataFrame)
+    DataFrameSignal = pyqtSignal(dict)
 
     def setMainClass(self,mainclass:Window):
         self.MainClass = mainclass
 
     def run(self) -> None:
-        try:
-            go = self.logicDirMethod()
-            print(go)
-            if go['go'] :
-                useproxies = self.MainClass.Setting.proxytoggle.isChecked()
-                useuseragent = self.MainClass.Setting.randUseragenttoggle.isChecked()
-                self.stop = False
-                self.statues.emit("Starting")
-                self.Jumia = JumiaPay(self.MainClass.Setting.vendorComboBox.currentText())
-                phonelist = self.Jumia.convertDataframeToPhonesList(go['Dataframe'])
-                totalnumbers = len(phonelist)
-                self.Jumia.Lead.connect(self.Lead.emit)
-                self.Jumia.msg.connect(self.msg.emit)
-                self.Jumia.stop.connect(self.stopping)
-                t1 = time.time()
-                if useproxies :
-                    Proxies = self.Jumia.ProxyAPI.autoAPI()
-                    self.Jumia.setProxies(Proxies = Proxies)
-                loops = 0
-                waiting = totalnumbers
-                sleeping = self.MainClass.Setting.timeRequestspinbox.value()
-                dataframe = go['Dataframe']
-                for AreaCode , PhoneNumber in phonelist :
-                    if self.stop == True:
-                        self.statues.emit(f"Stopped for Banned")
-                        self.msg.emit("خدنا باان يا اخوياا -_- ")
+        print(self.DataFrame)
+        while not self.DataFrame.empty:
+            try :
+
+                proxyList = self.JumiaObj.getFreshProxyList()
+                print("getFreshProxyList")
+                con = True
+            except Exception as e :
+                print(e)
+                con = False
+            if con :
+                print("Start")
+                if self.__index%2 :
+                    proxyList.reverse()
+                for proxy in proxyList :
+                    print(proxy.requestShape)
+                    if self.DataFrame.empty :
                         break
-                    if loops == 10 and useproxies:
-                        Proxies = self.Jumia.ProxyAPI.autoAPI()
-                        self.Jumia.setProxies(Proxies = Proxies)
-                        loops = 0
-                    print(AreaCode,PhoneNumber)
-                    self.statues.emit(f"will sleeping for {sleeping}")
-                    self.sleep(sleeping)
-                    self.statues.emit(f"Request for +2{AreaCode}{PhoneNumber}")
-                    try:
-                        self.Jumia.sendRequest(
-                            AreaCode = AreaCode,
-                            PhoneNumber = PhoneNumber ,
-                            userAgent = self.Jumia.Flags.RandomUserAgent if useuseragent else None, 
-                            proxy = self.Jumia.Flags.RandomProxy if useproxies else None,
-                        )
+                    try :
+                        lead = self.JumiaObj.sendRequest(
+                                AreaCode = self.DataFrame.iloc[0][0],
+                                PhoneNumber = self.DataFrame.iloc[0][1],
+                                proxy = proxy.requestShape ,
+                            )
+                        print(f"\n{lead.status_code} - {lead.type}\n")
+                        self.Lead.emit(lead.__dict__)
+                        self.next()
                     except Exception as e :
-                        self.Jumia.Errors.append(f"{AreaCode+PhoneNumber} -> {e}")
-                    waiting -= 1
-                    self.WaitingSignal.emit(waiting)
-                    dataframe = dataframe[1:]
-                    self.DataFrame.emit(dataframe)
-                    loops =+ 1
-                with open("Errors.txt",'w+') as file :
-                    file.writelines(self.Jumia.Errors)
-                t2 = time.time()
-                self.statues.emit("Ending")
-                self.msg.emit(f"\n {round(t2-t1,ndigits=2)} Is Total time for make {totalnumbers} number \nنورتنا يا رجولة متجيش تانى بقاا ^_-")
-        except Exception as e :
-            self.msg.emit(f"Error in {e}\nPlease Contact Hesham")
+                        pass
+                        # print(f"\t[+]\t Error With Proxy {e} - {e}")
+
+        self.statues.emit("Ended")
     def stopping(self,stop:bool):
         self.stop = stop
         
-    def logicDirMethod(self):
-        result = {}
-        result['go'] = True
+    def setJumiaObj(self, jumia:BaseJumia):
+        self.JumiaObj = jumia
+
+    def setDataFrame(self,df:pandas.DataFrame):
+        self.DataFrame = df
+
+    def setIndex(self,index):
+        self.__index = index
+
+    def next(self):
+        self.DataFrame = self.DataFrame[1:]
+        self.DataFrame.reset_index()
+        self.DataFrameSignal.emit(
+            dict(dataframe=self.DataFrame , index=self.__index)
+            )
         
-        if self.MainClass.Setting.lineEditDirectory.text() !=  "" :
-            try:
-                fileDir = self.MainClass.Setting.lineEditDirectory.text()
-                sheetname = 'Sheet1' if self.MainClass.Setting.lineEditSheetName.text() == '' else self.Setting.lineEditSheetName.text() 
-                self.MainClass.reshapeExelData(excelfile = fileDir, sheetname = sheetname)
-                result["go"] = True
-                result['Dataframe'] = self.MainClass.dataframe
-            except Exception as e :
-                print(e)
-                result["go"] = False 
-                result['Dataframe'] = self.MainClass.dataframe
-                self.msg.emit(f'File Directory Not Found Or Sheet Name Not Exist\nPlease Make Sure you Entered currect sheet name ')
 
-        elif self.MainClass.Setting.lineEditDirectory.text() ==  "" :
 
-            if self.MainClass.dataframe.empty :
-
-                self.msg.emit(f'No Phones In Waiting')
-                result["go"] = False 
-                result['Dataframe'] = self.MainClass.dataframe
-
-            else :
-                result["go"] = True
-                result['Dataframe'] = self.MainClass.dataframe
-
-        self.MainClass.Setting.lineEditDirectory.clear()
-        return result
