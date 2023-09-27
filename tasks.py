@@ -10,7 +10,6 @@ from qmodels import (
     typing ,
     SharingDataFrame
 )
-from WePay import Customer , NotCustomer , BaseWePay
 
 
 def row(row)->dict:
@@ -25,14 +24,11 @@ def row(row)->dict:
 
 
 class Task(QThread):
-    onCatchCustomer = pyqtSignal(Customer)
-    onCatchNotCustomer = pyqtSignal(NotCustomer)
     
     def __init__(self ,parent:'TasksContainer',sharingdata:SharingDataFrame, **kwargs) -> None:
         super().__init__()
         self.setParent(parent)
         self.sharingdata = sharingdata
-        self.wepay = BaseWePay()
         self.checker = parent.checker
         self.__stop = False 
     
@@ -44,12 +40,6 @@ class Task(QThread):
             try :
                 while not self.sharingdata.empty and not self.__stop  :
                     resault = self.wepay.getChangedNumber(**row(self.sharingdata.get_row()))
-                    if isinstance(resault,Customer):
-                        self.onCatchCustomer.emit(resault)
-                    elif isinstance(resault,NotCustomer):
-                        self.onCatchNotCustomer.emit(resault)
-                    else :
-                        print(resault)
                     if self.sharingdata.empty :
                         self.__stop = True
             except ConnectionError as ce :
@@ -83,9 +73,7 @@ class Task(QThread):
 class TasksContainer(QObject):
     status = pyqtSignal(str)
     msg = pyqtSignal(str)
-    onCatchCustomer = pyqtSignal(Customer)
-    onCatchNotCustomer = pyqtSignal(NotCustomer)
-
+   
 
     def __init__(self,sharingdata:SharingDataFrame,**kwargs) -> None:
         super().__init__()

@@ -15,7 +15,7 @@ from qmodels import (
     Checking ,
     pyqtSlot ,
 )
-from tasks import TasksContainer , Customer , NotCustomer
+from tasks import TasksContainer 
 from readers import (
      COLUMNS ,
      TABEL_MODEL_COLUMNS ,
@@ -208,8 +208,6 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
 
         self.sharingdata.lengthChanged.connect(lambda x :self.waitingValue.setText(str(x)))
 
-        self.taskscontainer.onCatchCustomer.connect(self.appendDataToModelAsCustomer)
-        self.taskscontainer.onCatchNotCustomer.connect(self.appendDataToModelAsNotCustomer)
         self.taskscontainer.status.connect(self.statusValue.setText)
         self.taskscontainer.msg.connect(self.message.showInfo)
 
@@ -264,26 +262,8 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.loadingWidget.show()
 
 
-    @pyqtSlot(Customer)
-    def appendDataToModelAsCustomer(self,cust:Customer):
-        info = [cust.AreaCode,cust.PhoneNumber,True,"--"]
-        info.append(cust.invoices[0].TotalAmount) if cust.HasPreviousUnPaidInvoice else info.append("No Invoices")
-        self.tableModel.addrow(info)
+    
 
-    @pyqtSlot(NotCustomer)
-    def appendDataToModelAsNotCustomer(self,notCust:NotCustomer):
-        # ## For Fawateer
-        # info = [notCust.AreaCode,notCust.PhoneNumber,False,notCust.text,"--"]
-        # self.tableModel.addrow(info)
-
-        ## For New Numbers
-        info = [notCust.AreaCode,notCust.PhoneNumber,notCust.text]
-        if "is:" in notCust.text :
-            news = notCust.text.split("is:")[-1].split("-")
-            info += [news[0] ,news[1][:-1]]
-        else :
-            info += ["--","--"]
-        self.tableModel.addrow(info)
 
     def setAppIcon(self,relativePath:str):
         """To set Icon For Your App"""
