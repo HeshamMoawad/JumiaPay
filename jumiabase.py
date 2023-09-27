@@ -1,7 +1,7 @@
 # from requests.sessions import default_headers
 from requests import Response
 import pandas as pd
-from MyPyQt5 import QObject , pyqtSignal
+from PyQt5.QtCore import QObject , pyqtSignal
 import random,typing ,sqlite3,json,requests,openpyxl,datetime,pandas
 from ProxyFilterClass import ProxyFilterAPI
 import time
@@ -35,49 +35,13 @@ import time
 # Gmail : HeshamMoawad120120@gmail.com
 # Whatsapp : +201111141853
 
-####################################################
 
-class DataBaseConnection(object):
-    def __init__(self) -> None:
-        self.con = sqlite3.connect("Data\Database.db")
-        self.cur = self.con.cursor()
-#--------------------------------------------------------------------
-    def exist(self,table,value:dict) ->bool :
-        # value = {'PhoneNumber':['PhoneNumber'],'AreaCode':['AreaCode']}
-        self.cur.execute(f"""SELECT * FROM {table} WHERE  PhoneNumber = '{value['PhoneNumber']}' AND AreaCode = '{value['AreaCode']}'; """)
-        return True if self.cur.fetchall() != [] else False
-    
-#-------------------------------------------------------------------
-    def addCustomer(self,vendor,**kwargs):
-        print()
-        try:
-            self.cur.execute(f"""
-            INSERT INTO {vendor} {str(tuple(kwargs.keys())).replace("'","")}
-            VALUES {tuple(kwargs.values())}; 
-            """)
-            self.con.commit()
-        except Exception as e:
-            print(f"\n{e} \nError in addCustomer \n")
-
-#--------------------------------------------------------------------        
-    def reshapeExelData(self,excelfile,sheetname):
-        wb = openpyxl.load_workbook(excelfile)
-        ws = wb[sheetname]
-        df = pd.DataFrame(ws.values)
-        response = []
-        for row in df.index:
-            res = (f"{df.iloc[row][0]}", f"{df.iloc[row][1]}")
-            response.append(res)
-        return response[1:]
 
 ###############################################################
 
 class LeadObjectFirst(object):
     def __init__(self,Response:dict) -> None:
         self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
         self.goNext = True
         self.statusOfResponse = Response["code"]  # "SUCCESS"
         try:
@@ -108,9 +72,6 @@ class LeadObjectFirst(object):
 class LeadObjectSec(object):
     def __init__(self,Response:dict) -> None:
         self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
         self.goNext = True
         self.statusOfResponse = Response["code"]  # "SUCCESS"
         self.Price = str(Response["response"]['payment_details'][0]['raw_value'])
@@ -132,9 +93,6 @@ class LeadObjectSec(object):
 class LeadObjectNoClient(object):
     def __init__(self,Response:dict) -> None:
         self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
         self.goNext = True
         self.statusOfResponse = Response["code"]  # "INVALID_FIELDS"
         self.Price = str(None)
@@ -156,9 +114,6 @@ class LeadObjectNoClient(object):
 class LeadObjectUndefined(object):
     def __init__(self,Response:dict) -> None:
         self.Response = Response
-        self.Data = DataBaseConnection('Data\DataBase.db')
-        self.Date = DateOperations() 
-        self.DateScraping = self.Date.getCurrentDate()
         self.goNext = True
         self.statusOfResponse = f'Undefined-{Response}'  # "INVALID_FIELDS"
         self.Price = str(None)
@@ -1268,19 +1223,8 @@ Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML
         self.header = self.Headers[self.vendor]
         self.payload = self.Payloads[self.vendor]
         # ------------- Database Connections ------------------
-        self.Data = DataBaseConnection(vendor)
         self.ProxyAPI = ProxyFilterAPI()
-
         super().__init__()
-
-
-    def convertDataframeToPhonesList(self,df:pandas.DataFrame)->list:
-        response = []
-        for row in range(0,len(df)):
-            res = (f"{df.iloc[row][0]}",f"{df.iloc[row][1]}")
-            if f"{df.iloc[row]}" != 'None' :
-                response.append(res)
-        return response
 
 
     def sendRequest(self,AreaCode:str,PhoneNumber:str,proxy:typing.Optional[dict]=None,userAgent:typing.Optional[str]=None) -> Response:
@@ -1292,7 +1236,7 @@ Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML
         # UserAgent Logic Method 
         if userAgent != None :
             if userAgent == self.Flags.RandomUserAgent:
-                userAgent = self.generator.getRandomUserAgent() #self.getRandomUserAgent()
+                userAgent = random.choice(self.UserAgentList) 
             else :
                 userAgent = userAgent
         else :
@@ -1392,7 +1336,6 @@ Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML
                     Lead['PhoneNumber'] = PhoneNumber 
                     Lead['HasUnpaidInvoices'] = 'لايوجد'
 
-                #if not self.Data.exist(self.vendor,{'PhoneNumber':Lead['PhoneNumber'],'AreaCode':Lead['AreaCode']}):
                 Lead['DateScraping'] = f"{datetime.datetime.now().date()} |{datetime.datetime.now().hour}:{datetime.datetime.now().minute}"
                 Lead['TimeScraping'] = str(round(time,ndigits =2))
                 self.Data.addCustomer(
@@ -1406,10 +1349,6 @@ Mozilla/5.0 (iPhone; CPU iPhone OS 8_4 like Mac OS X) AppleWebKit/600.1.4 (KHTML
                 Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
                 Lead['Server Message'] = '' ########
                 Lead['HasUnpaidInvoices'] = 'لايوجد فاتورة'
-                self.Data.addCustomer(
-                    vendor = self.vendor ,
-                    **Lead
-                )
                 self.Lead.emit(Lead)
 
 
