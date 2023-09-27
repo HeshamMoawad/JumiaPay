@@ -212,7 +212,6 @@ class WorkingThread(MyThread):
         print(self.DataFrame)
         while not self.DataFrame.empty:
             try :
-
                 proxyList = self.JumiaObj.getFreshProxyList()
                 print("getFreshProxyList")
                 con = True
@@ -248,8 +247,8 @@ class WorkingThread(MyThread):
                 t2 = time.time()
                 self.statues.emit("Ending")
                 self.msg.emit(f"\n {round(t2-t1,ndigits=2)} Is Total time for make {totalnumbers} number \nنورتنا يا رجولة متجيش تانى بقاا ^_-")
-        except Exception as e :
-            self.msg.emit(f"Error in {e}\nPlease Contact Hesham")
+        # except Exception as e :
+        #     self.msg.emit(f"Error in {e}\nPlease Contact Hesham")
     def stopping(self,stop:bool):
         self.stop = stop
         
@@ -284,3 +283,9 @@ class WorkingThread(MyThread):
 
         self.MainClass.Setting.lineEditDirectory.clear()
         return result
+    
+
+
+w = Window("hh")
+w.show()
+

@@ -35,11 +35,7 @@ from Packages import MyMessageBox
 validation = Myhash()
 msg = MyMessageBox()
 
-<<<<<<< HEAD
 # # Data\LoginCode.txt
-=======
-# Data\LoginCode.txt
->>>>>>> c342788500481e81e86cb799eca7ff25e02ad0a5
 if os.path.isfile('Data\LoginCode.txt'):
     if validation.checkValidation(txtfilepath='Data\LoginCode.txt',layers = 2) :
         w = Window(validation.getUserName())
@@ -62,7 +58,3 @@ if os.path.isfile('Data\LoginCode.txt'):
             file.close()
 else :
     msg.showCritical("Can't Open App Without LoginCode File")
-<<<<<<< HEAD
-=======
-
->>>>>>> c342788500481e81e86cb799eca7ff25e02ad0a5
