@@ -9,7 +9,7 @@ import os
 
 # Constants
 COLUMNS = ['AreaCode','PhoneNumber']
-TABEL_MODEL_COLUMNS = COLUMNS + ["Server Message","New AreaCode","New PhoneNumber"]
+TABEL_MODEL_COLUMNS = COLUMNS + ["Server Message"]
 
 
 
