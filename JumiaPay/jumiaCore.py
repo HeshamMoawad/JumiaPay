@@ -7,6 +7,30 @@ CLEANR = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
 def removeHTML(text):
   return re.sub(CLEANR, '', text)
 
+class ResponseStatus():
+    Success = 'SUCCESS'
+    Faild = 'INVALID_FIELDS'
+
+class ResponseLength():
+    Normal = 6
+    Second = 5
+
+class Flags():
+    RandomUserAgent = 'RandomUserAgent'
+    RandomProxy = 'RandomProxy'
+
+class Vendors():
+    We = 'WE'
+    Etisalat = 'Etisalat'
+    Orange = 'Orange'
+    Noor = 'Noor'
+    All = [We,Etisalat,Orange,Noor]
+    
+class ContentLength:
+    WE = {'content-length': '890'}
+    Etisalat ={'content-length': '655'}
+    Orange = {'content-length': '890'}
+    Noor = {'content-length': '888'}
 
 
 class LeadObjectFirst(object):
