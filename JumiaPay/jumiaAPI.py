@@ -150,7 +150,7 @@ class JumiaPay(Requests):
     def sendRequest(self, AreaCode :str , PhoneNumber:str ,proxy=None, userAgent=None )-> NewResponse:
         self.updateHeaders({'user-agent':userAgent}) if userAgent != None else None
         return self.post(
-            timeout = 20 ,
+            timeout = 15 ,
             json = self.getPayload(
                 AreaCode = AreaCode , 
                 PhoneNumber = PhoneNumber ,
@@ -160,10 +160,16 @@ class JumiaPay(Requests):
             PhoneNumber = PhoneNumber,
         )
 
-    def getAccount(self, AreaCode :str, PhoneNumber:str, proxy=None, userAgent=None ):
+    def getAccount(self, AreaCode :str, PhoneNumber:str, proxy=None, userAgent=None )-> list:
         response = self.sendRequest(AreaCode,PhoneNumber,proxy,userAgent)
+        jsonData = response.json()
         if response.status_code == 200 :
-            pass
+            if 'elements' in jsonData['response'].keys() :
+                serverMsg = jsonData['response']['elements'][0]['label']
+            elif 'payment_details' in jsonData['response'].keys():
+                serverMsg = jsonData['response']['payment_details'][-1]['value']
+            else :
+                serverMsg = str(jsonData['response'])
         elif response.status_code == 400 :
             pass
         elif response.status_code == 429 :
