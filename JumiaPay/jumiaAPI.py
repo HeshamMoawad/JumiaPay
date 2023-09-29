@@ -5,6 +5,17 @@ from .RequestsCore import Requests , Response
 from urllib3.exceptions import InsecureRequestWarning
 import requests
 from .generator import Generator
+from .jumiaCore import (
+    LeadObjectFirst ,
+    LeadObjectSec ,
+    LeadObjectNoClient ,
+    LeadObjectUndefined ,
+    Vendors ,
+    ResponseStatus ,
+    ResponseLength ,
+    Flags ,
+    ContentLength
+)
 ####################################################
 
 # MIT License
@@ -45,32 +56,13 @@ class JumiaPay(QObject):
 
     DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
     
-    class ResponseStatus():
-        Success = 'SUCCESS'
-        Faild = 'INVALID_FIELDS'
-
-    class ResponseLength():
-        Normal = 6
-        Second = 5
-
-    class Flags():
-        RandomUserAgent = 'RandomUserAgent'
-        RandomProxy = 'RandomProxy'
-
-    class Vendors():
-        We = 'WE'
-        Etisalat = 'Etisalat'
-        Orange = 'Orange'
-        Noor = 'Noor'
-        All = [We,Etisalat,Orange,Noor]
-
     def __init__(self,vendor:str) -> None:
         self.vendor = vendor
         self.URLs = {
-            'WE': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.postpaid.wehome@aman",
-            'Etisalat': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.postpaid.etisalat@aman",
-            'Orange': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.bill.orangedsl@fawry",
-            'Noor': "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/internet.bill.nooradsl@fawry"
+            'WE': "internet.postpaid.wehome@aman",
+            'Etisalat': "internet.postpaid.etisalat@aman",
+            'Orange': "internet.bill.orangedsl@fawry",
+            'Noor': "internet.bill.nooradsl@fawry"
         }
         self.Headers = {
             'WE': {
@@ -255,34 +247,40 @@ class JumiaPay(QObject):
 
 
 class JumiaPay(Requests):
-    def __init__(self) -> None:
+    def __init__(self,vendor:Vendors) -> None:
         self.gen = Generator()
-        # Suppress only the single warning from urllib3 needed.
-        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-        return super().__init__("https://billing.te.eg/api/Account",  {
-                'Accept': '*/*',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'Content-Length': '71',
-                'Cookie': 'token=;' ,# B48FA4B0712495394276362E62465E6220230422312040A914D4C153C2E02965E1B8A6C667E42E
-                'Host': 'billing.te.eg',
-                'Origin': 'https://billing.te.eg',
-                'Referer': 'https://billing.te.eg/ar-EG',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
-                'X-Requested-With': 'XMLHttpRequest',
-            })
-
-    def getPayload(self , AreaCode :str , PhoneNumber:str, inquiry_by:str='telephone')-> dict:
-        return {
-            'AreaCode': AreaCode.replace(" ",""),
-            'PhoneNumber': PhoneNumber.replace(" ",""),
-            'PinCode': '',
-            'InquiryBy': inquiry_by,
-            'AccountNo': '',
+        self.vendor = vendor
+        self.URLs = {
+            'WE': "internet.postpaid.wehome@aman",
+            'Etisalat': "internet.postpaid.etisalat@aman",
+            'Orange': "internet.bill.orangedsl@fawry",
+            'Noor': "internet.bill.nooradsl@fawry"
         }
+        payloadsfile = open("json\payloads.json", "r")
+        self.Payloads = json.load(payloadsfile)        
+        self.Proxies = []
+        self.Errors = []
+        # ------------- Prapares ----------------
+        self.payload = self.Payloads[self.vendor]
+        # Suppress only the single warning from urllib3 needed.
+        # requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+        super().__init__(
+            "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/"+self.URLs[vendor],  {
+                'accept': 'application/json, text/plain, */*',
+                'accept-encoding': 'gzip, deflate, br',
+                'accept-language': 'en',
+                'content-type': 'application/json;charset=UTF-8',
+                'origin': 'https://pay.jumia.com.eg',
+                'referer': 'https://pay.jumia.com.eg/services/internet-bills',
+                'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.117 Mobile Safari/537.36',
+            })
+    
 
-    def getAccount(self, AreaCode :str , PhoneNumber:str)-> Customer or NotCustomer:
+
+
+
+
+    def getAccount(self, AreaCode :str , PhoneNumber:str):
         self.updateHeaders(
             {
                 'Cookie' : f'token={self.gen.genText(78).upper()};' ,
