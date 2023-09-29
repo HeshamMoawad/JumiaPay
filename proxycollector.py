@@ -1,7 +1,10 @@
 import threading as thr
 import numpy as np
-import requests 
-from bs4 import BeautifulSoup 
+import requests , random
+from bs4 import BeautifulSoup
+from PyQt5.QtCore import  QThread , pyqtSignal
+
+
 
 ####################################################
 
@@ -34,14 +37,38 @@ from bs4 import BeautifulSoup
 
 ####################################################
 
-class ProxyFilterAPI(object): # From  https://free-proxy-list.net/ 
+class ProxyCollector(QThread): # From  https://free-proxy-list.net/ 
+    status = pyqtSignal(str)
+    filled = pyqtSignal()
+
     Yes = 'yes'
     No = 'no'
 
     def __init__(self) -> None:
         self.Threads = []  # List Of Threads that is Working
         self.Errors = []  # Errors in https request 
+        self.tempProxiesList = []
         self.ProxiesList = [] # Good Proxies
+        self.__stop = False
+        self.__proxiesIndex = 0
+        
+    def run(self) -> None:
+        while not self.__stop :
+            self.autoAPI(True)
+            print(f"Length of Proxies is -> {len(self.tempProxiesList)}")
+            self.filled.emit()
+            self.sleep(60*5)
+
+    def getProxy(self)-> dict :
+        try :
+            ip_port = self.tempProxiesList[self.__proxiesIndex]
+            self.__proxiesIndex = int(self.__proxiesIndex+1) if self.__proxiesIndex <= len(self.tempProxiesList)-2 else 0
+            return self.__getProxyDict(ip_port=ip_port)
+        except Exception as e :
+            return self.__getProxyDict(ip_port=random.choice(self.tempProxiesList))
+    
+    def __getProxyDict(self,ip_port):
+        return {'http':ip_port,'https':ip_port}
 
     def getFreshProxyList(
         self,
@@ -58,7 +85,7 @@ class ProxyFilterAPI(object): # From  https://free-proxy-list.net/
             ip = row[0].text
             port = row[1].text
             https = row[6].text
-            #print(f"{ip}:{port} --> https:{https}")
+            print(f"{ip}:{port} --> https:{https}")
             if https == httpsFilter :
                 ip_port = f"{ip}:{port}"
                 ProxyList.append(ip_port)
@@ -68,15 +95,12 @@ class ProxyFilterAPI(object): # From  https://free-proxy-list.net/
                 file.close()
         return ProxyList
 
-
     def testProxy(self,ip_port):
-        proxy = {'http':ip_port,'https':ip_port}
         try:
-            response = requests.get(url = "http://httpbin.org/ip",proxies= proxy ,timeout = 5)
+            response = requests.get(url = "http://httpbin.org/ip",proxies= self.__getProxyDict(ip_port) ,timeout = 6)
             self.ProxiesList.append(ip_port)
         except Exception as e :
             self.Errors.append(e)
-
 
     def threadingRequstFilter(self,ip_portLists):
         for iplist in ip_portLists:
@@ -90,10 +114,12 @@ class ProxyFilterAPI(object): # From  https://free-proxy-list.net/
                 task.join()
 
     def autoAPI(self,wait:bool= True):
+        self.ProxiesList.clear()
         firstlist = self.getFreshProxyList(httpsFilter=self.Yes)
         self.threadingRequstFilter(firstlist)
         if wait == True :
             self.wait()
-        return self.ProxiesList
+        self.tempProxiesList = self.ProxiesList.copy()
+        return self.tempProxiesList
         
 
