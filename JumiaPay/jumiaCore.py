@@ -25,13 +25,18 @@ class Vendors():
     Orange = 'Orange'
     Noor = 'Noor'
     All = [We,Etisalat,Orange,Noor]
-    
+
 class ContentLength:
     WE = {'content-length': '890'}
-    Etisalat ={'content-length': '655'}
-    Orange = {'content-length': '890'}
-    Noor = {'content-length': '888'}
-
+    ETISALAT ={'content-length': '655'}
+    ORANGE = {'content-length': '890'}
+    NOOR = {'content-length': '888'}
+    All = {
+        'WE' : {'content-length': '890'} ,
+        'Etisalat' : {'content-length': '655'} ,
+        'Orange' : {'content-length': '890'} ,
+        'Noor' : {'content-length': '888'} ,
+    }
 
 class LeadObjectFirst(object):
     def __init__(self,Response:dict) -> None:
