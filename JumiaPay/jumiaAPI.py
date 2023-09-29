@@ -49,7 +49,7 @@ from .jumiaCore import (
 
 
 
-class JumiaPay(QObject):
+class JumiaPayOld(QObject):
     Lead = pyqtSignal(dict)
     msg = pyqtSignal(str)
     stop = pyqtSignal(bool)
@@ -247,7 +247,8 @@ class JumiaPay(QObject):
 
 
 class JumiaPay(Requests):
-    def __init__(self,vendor:Vendors) -> None:
+
+    def __init__(self,vendor:str=Vendors.We) -> None:
         self.gen = Generator()
         self.vendor = vendor
         self.URLs = {
@@ -256,14 +257,10 @@ class JumiaPay(Requests):
             'Orange': "internet.bill.orangedsl@fawry",
             'Noor': "internet.bill.nooradsl@fawry"
         }
-        payloadsfile = open("json\payloads.json", "r")
-        self.Payloads = json.load(payloadsfile)        
-        self.Proxies = []
         self.Errors = []
         # ------------- Prapares ----------------
-        self.payload = self.Payloads[self.vendor]
+        self.payload:dict = json.load(open("json\payloads.json", "r"))[self.vendor]
         # Suppress only the single warning from urllib3 needed.
-        # requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
         super().__init__(
             "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/"+self.URLs[vendor],  {
                 'accept': 'application/json, text/plain, */*',
@@ -274,19 +271,19 @@ class JumiaPay(Requests):
                 'referer': 'https://pay.jumia.com.eg/services/internet-bills',
                 'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.5414.117 Mobile Safari/537.36',
             })
+        self.updateHeaders(ContentLength.All[self.vendor])
     
 
 
+    def reshapePayload(self,AreaCode:str,PhoneNumber:str):
+        payload = self.payload.copy()
+        # EG_+2035242441  # "EG_+20402917386"
+        payload['payload']['phone_number'] = f"EG_+20{AreaCode}{PhoneNumber}"
+        return payload
 
 
 
     def getAccount(self, AreaCode :str , PhoneNumber:str):
-        self.updateHeaders(
-            {
-                'Cookie' : f'token={self.gen.genText(78).upper()};' ,
-                'User-Agent': f'{self.gen.getRandomUserAgent()}',
-            } 
-        )
         Response = self.post(
             URL='/Inquiry',
             timeout = 20 ,
@@ -298,38 +295,4 @@ class JumiaPay(Requests):
             AreaCode =  AreaCode, 
             PhoneNumber = PhoneNumber,
         )
-        try : 
-            return Customer(Response.json()['Account'])
-        except Exception as e :
-            return NotCustomer(
-                AreaCode= Response.AreaCode ,
-                PhoneNumber = Response.PhoneNumber , 
-                text = removeHTML(Response.text) , 
-            )
-
-    def getChangedNumber(self , AreaCode :str , PhoneNumber:str):
-        self.updateHeaders(
-            {
-                'Cookie' : f'token={self.gen.genText(78).upper()};' ,
-                'User-Agent': f'{self.gen.getRandomUserAgent()}',
-            } 
-        )
-        Response = self.post(
-            URL='/GetChangedNo',
-            timeout = 20 ,
-            data = self.getPayload(
-                AreaCode = AreaCode , 
-                PhoneNumber = PhoneNumber ,
-                inquiry_by='',
-            ) , 
-            verify = False ,
-        )
-        try : 
-            return Customer(Response.json()['Account'])
-        except Exception as e :
-            return NotCustomer(
-                AreaCode= AreaCode ,
-                PhoneNumber = PhoneNumber , 
-                text = removeHTML(Response.text) , 
-            )
 
