@@ -3,7 +3,7 @@ from requests import Response
 import pandas as pd
 from PyQt5.QtCore import QObject , pyqtSignal
 import random,typing ,sqlite3,json,requests,openpyxl,datetime,pandas
-from ProxyFilterClass import ProxyFilterAPI
+from proxycollector import ProxyFilterAPI
 import time
 
 ####################################################

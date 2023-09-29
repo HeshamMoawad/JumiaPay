@@ -13,7 +13,6 @@ from qmodels import (
 
 
 def row(row)->dict:
-    
     areacode = str(int(float(row[0])))
     if not (2 >= len(areacode) > 0 ):
         areacode = f"0{areacode}"
