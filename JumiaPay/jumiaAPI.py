@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QObject , pyqtSignal
 import random,typing ,json,requests,datetime
 import time
-from .RequestsCore import Requests , Response
+from .RequestsCore import Requests , NewResponse
 from urllib3.exceptions import InsecureRequestWarning
 import requests
 from .generator import Generator
@@ -188,7 +188,7 @@ class JumiaPayOld(QObject):
         payload['payload']['phone_number'] = f"EG_+20{AreaCode}{PhoneNumber}"
         return payload
 
-    def solveResponse(self,AreaCode:str,PhoneNumber:str,response:Response,time)-> dict:
+    def solveResponse(self,AreaCode:str,PhoneNumber:str,response,time)-> dict:
         print("-"*20)
         if response.status_code == 429 :
             self.msg.emit(f'خدنا بان يا اخوياااااا -_-')
@@ -262,7 +262,7 @@ class JumiaPay(Requests):
         self.payload:dict = json.load(open("json\payloads.json", "r"))[self.vendor]
         # Suppress only the single warning from urllib3 needed.
         super().__init__(
-            "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/"+self.URLs[vendor],  {
+            "https://pay.jumia.com.eg/api/v3/utilities/service-form-type/"+self.URLs[self.vendor],  {
                 'accept': 'application/json, text/plain, */*',
                 'accept-encoding': 'gzip, deflate, br',
                 'accept-language': 'en',
@@ -275,7 +275,7 @@ class JumiaPay(Requests):
     
 
 
-    def reshapePayload(self,AreaCode:str,PhoneNumber:str):
+    def getPayload(self,AreaCode:str,PhoneNumber:str):
         payload = self.payload.copy()
         # EG_+2035242441  # "EG_+20402917386"
         payload['payload']['phone_number'] = f"EG_+20{AreaCode}{PhoneNumber}"
@@ -283,16 +283,16 @@ class JumiaPay(Requests):
 
 
 
-    def getAccount(self, AreaCode :str , PhoneNumber:str):
-        Response = self.post(
-            URL='/Inquiry',
+    def sendRequest(self, AreaCode :str , PhoneNumber:str)-> NewResponse:
+        return self.post(
             timeout = 20 ,
-            data = self.getPayload(
+            json = self.getPayload(
                 AreaCode = AreaCode , 
                 PhoneNumber = PhoneNumber ,
             ) , 
-            verify = False ,
             AreaCode =  AreaCode, 
             PhoneNumber = PhoneNumber,
         )
 
+    def getAccount(self,AreaCode :str , PhoneNumber:str):
+        ...
