@@ -1,0 +1,3 @@
+from .jumiaAPI import (
+    JumiaPay ,
+)
