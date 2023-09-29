@@ -45,75 +45,6 @@ from .jumiaCore import (
 # Gmail : HeshamMoawad120120@gmail.com
 # Whatsapp : +201111141853
 
-
-
-
-
-class JumiaPayOld(QObject):
-    Lead = pyqtSignal(dict)
-    msg = pyqtSignal(str)
-    stop = pyqtSignal(bool)
-
-    DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
-   
-    def solveResponse(self,AreaCode:str,PhoneNumber:str,response,time)-> dict:
-        print("-"*20)
-        if response.status_code == 429 :
-            self.msg.emit(f'خدنا بان يا اخوياااااا -_-')
-            self.stop.emit(True)
-        else:
-            try:
-                response = response.json()
-                con = True
-            except Exception as e :
-                con = False
-            Lead = {}
-            if con:
-                if response['code'] == self.ResponseStatus.Success :
-                    if len(response['response']) == self.ResponseLength.Normal:
-                        # First Response (Normal)
-                        Lead['statusOfResponse'] = response["code"]  # "SUCCESS"
-                        Lead['Price'] = response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2] 
-                        Lead['Server Message'] = response["response"]["elements"][0]["label"]
-                        Lead['AreaCode'] = AreaCode #response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
-                        Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
-                        Lead['HasUnpaidInvoices'] = 'يوجد فاتورة'
-
-                    elif len(response['response']) == self.ResponseLength.Second :
-                        # Second Response 
-                        Lead['statusOfResponse'] = response["code"] # "SUCCESS"
-                        Lead['Price'] = str(response["response"]['payment_details'][0]['raw_value'])
-                        Lead['Server Message'] = 'Redirect Page'
-                        Lead['AreaCode'] = AreaCode #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][:2]
-                        Lead['PhoneNumber'] = PhoneNumber #response["response"]['order_details'][1]['raw_value'].split("+20")[-1][2:]
-                        Lead['HasUnpaidInvoices'] = 'يوجد فاتورة'
-
-                elif response['code'] == self.ResponseStatus.Faild :
-                    # ClientNotFound
-                    Lead['statusOfResponse'] = response['code']  # 'INVALID_FIELDS'
-                    Lead['Price'] = str(None)
-                    Lead['Server Message'] = response['response']
-                    Lead['AreaCode'] = AreaCode
-                    Lead['PhoneNumber'] = PhoneNumber 
-                    Lead['HasUnpaidInvoices'] = 'لايوجد'
-
-                Lead['DateScraping'] = f"{datetime.datetime.now().date()} |{datetime.datetime.now().hour}:{datetime.datetime.now().minute}"
-                Lead['TimeScraping'] = str(round(time,ndigits =2))
-                self.Data.addCustomer(
-                    vendor = self.vendor ,
-                    **Lead
-                )
-                self.Lead.emit(Lead)
-            else:
-                Lead['Price'] = str(None) #response["response"]["elements"][0]["label"].split("EGP")[0].split(" ")[-2] 
-                Lead['AreaCode'] = AreaCode #response["response"]["payload"]["phone_number"].split('+2')[-1][:2]
-                Lead['PhoneNumber'] = PhoneNumber #response["response"]["payload"]["phone_number"].split('+2')[-1][2:]
-                Lead['Server Message'] = '' ########
-                Lead['HasUnpaidInvoices'] = 'لايوجد فاتورة'
-                self.Lead.emit(Lead)
-
-
-
 class JumiaPay(Requests):
 
     def __init__(self,vendor:str=Vendors.We) -> None:
@@ -162,7 +93,7 @@ class JumiaPay(Requests):
 
     def getAccount(self, AreaCode :str, PhoneNumber:str, proxy=None, userAgent=None )-> list:
         response = self.sendRequest(AreaCode,PhoneNumber,proxy,userAgent)
-        jsonData = response.json()
+        jsonData = response.json() if response.status_code != 429 else {}
         if response.status_code == 200 :
             if 'elements' in jsonData['response'].keys() :
                 serverMsg = jsonData['response']['elements'][0]['label']
@@ -171,11 +102,15 @@ class JumiaPay(Requests):
             else :
                 serverMsg = str(jsonData['response'])
         elif response.status_code == 400 :
-            pass
+            if jsonData['code'] == "FAILED" or jsonData['code'] == "INVALID_FIELDS" or jsonData['code'] == "INVALID_REQUEST"  :
+                serverMsg = str(jsonData['response'])
+            else :
+                serverMsg = str(jsonData)
         elif response.status_code == 429 :
-            pass
+            serverMsg = "IP Address Have Banned"
         else :
-            pass
+            serverMsg = response.text
+        return [response.AreaCode,response.PhoneNumber,serverMsg]
 
 
 
