@@ -3,7 +3,8 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys , typing
-
+#import this below 
+from  jumiabase  import JumiaPay
 APP = QtWidgets.QApplication(sys.argv)
 
 
@@ -40,6 +41,9 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.tableModel = MyTableModel(TABEL_MODEL_COLUMNS)
         self.internet = Checking()
         self.excelReader = ExcelReader()
+
+        #add var self vendor 
+        self.vendor = JumiaPay.Vendors.We()
 
 
     def setupUi(self):
@@ -82,9 +86,11 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.horizontalLayout_4.addWidget(self.filenameFrame)
         self.watingFrame = QtWidgets.QFrame(self.topFrame)
         self.watingFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        #resize for the below 
         self.watingFrame.setGeometry(220, 30, 401, 51)
         self.watingFrame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.watingFrame.setObjectName("watingFrame")
+        #add combo box in frame 
         self.project = QtWidgets.QComboBox(self.watingFrame)
         self.project.setObjectName("project")
         self.project.addItems(["WE","Etisalat","shiboba"])
