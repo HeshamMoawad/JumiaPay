@@ -10,7 +10,8 @@ from qmodels import (
     typing ,
     SharingDataFrame
 )
-
+from proxycollector import ProxyCollector
+from JumiaPay import JumiaPay
 
 def row(row)->dict:
     areacode = str(int(float(row[0])))
@@ -23,24 +24,29 @@ def row(row)->dict:
 
 
 class Task(QThread):
-    
-    def __init__(self ,parent:'TasksContainer',sharingdata:SharingDataFrame, **kwargs) -> None:
+    result = pyqtSignal(list)
+    def __init__(self ,parent:'TasksContainer',sharingdata:SharingDataFrame,vendor:str,proxiesCollector:ProxyCollector, **kwargs) -> None:
         super().__init__()
         self.setParent(parent)
         self.sharingdata = sharingdata
+        self.proxiesCollector = proxiesCollector
         self.checker = parent.checker
         self.__stop = False 
+        self.__vendor = vendor
     
-    def parent(self)-> 'TasksContainer' :
-        return super().parent()
+    def parent(self)-> 'TasksContainer' : return super().parent()
 
     def run(self) -> None: 
-        while not self.__stop :
+        self.jumia = JumiaPay(self.__vendor)
+        while not self.sharingdata.empty and not self.__stop  :
             try :
                 while not self.sharingdata.empty and not self.__stop  :
-                    resault = self.wepay.getChangedNumber(**row(self.sharingdata.get_row()))
                     if self.sharingdata.empty :
                         self.__stop = True
+
+                    resault = self.jumia.getAccount(**row(self.sharingdata.get_row()),proxy=self.proxiesCollector.getProxy())
+                    print(resault)
+                    self.result.emit(resault)
             except ConnectionError as ce :
                 print(ce)
                 if not self.checker.isConnect() :
@@ -51,7 +57,7 @@ class Task(QThread):
 
 
     def __str__(self) -> str:
-        return f"WePayWorker(isRunning : {self.isRunning()})"
+        return f"JumiaPayWorker(isRunning : {self.isRunning()})"
         
     def start(self) -> None:
         if not self.isRunning():
@@ -72,13 +78,16 @@ class Task(QThread):
 class TasksContainer(QObject):
     status = pyqtSignal(str)
     msg = pyqtSignal(str)
-   
+    result = pyqtSignal(list)
 
-    def __init__(self,sharingdata:SharingDataFrame,**kwargs) -> None:
+
+    def __init__(self,sharingdata:SharingDataFrame,proxiesCollector:ProxyCollector,vendor:str,**kwargs) -> None:
         super().__init__()
         self.__tasks:typing.List[Task]= []
         self.sharingdata = sharingdata
         self.checker = Checking()
+        self.proxiesCollector = proxiesCollector
+        self.setVendor(vendor)
 
     @property
     def tasks(self)->typing.List[Task]:
@@ -91,10 +100,9 @@ class TasksContainer(QObject):
                     max = self.sharingdata.rowCount()
                 for _ in range(max):
                     print(f"Running {_}")
-                    task = Task(self , self.sharingdata)
+                    task = Task(self , self.sharingdata, self.proxiesCollector)
                     task.finished.connect(lambda : self.status.emit("OFF "))
-                    task.onCatchCustomer.connect(self.onCatchCustomer.emit)
-                    task.onCatchNotCustomer.connect(self.onCatchNotCustomer.emit)
+                    task.result.connect(self.result.emit)
                     self.__tasks.append(task)
                     task.start()
                 self.status.emit("ON ")
@@ -111,3 +119,6 @@ class TasksContainer(QObject):
 
     def isRunning(self):
         return True if len(self.__tasks) > 0 else False
+
+    def setVendor(self,vendor:str):
+        self.__vendor = vendor
