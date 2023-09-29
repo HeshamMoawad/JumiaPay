@@ -4,7 +4,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys , typing
 #import this below 
-from  jumiabase  import JumiaPay
+from  JumiaPay.jumiaAPI  import JumiaPay
 APP = QtWidgets.QApplication(sys.argv)
 
 
