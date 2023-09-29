@@ -26,8 +26,7 @@ from readers import (
 from models import BackendManager ,sendTMessage
 
 
-APP_TITLE = "K7 Team : الارقام الجديدة"
-# APP_TITLE = "K7 Team : الفواتير"
+APP_TITLE = "K7 Team : Jumia"
 
 class Ui_MainWindow(QtWidgets.QMainWindow):
 
@@ -43,7 +42,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.excelReader = ExcelReader()
 
         #add var self vendor 
-        self.vendor = JumiaPay.Vendors.We()
+        self.vendor = JumiaPay.Vendors.We
 
 
     def setupUi(self):
@@ -298,9 +297,9 @@ setting = SettingReader("setting.ini")
 print(setting.getDomain(),setting.getSerialNumber())
 manager = BackendManager(setting.getDomain(),setting.getSerialNumber())
 ui = Ui_MainWindow()
-ui.setAppIcon("Icons\icons8-filter-100.png")
+ui.setAppIcon("Icons\JumiaIcon.ico")
 sendTMessage("Openning App")
 if manager.isValid() :
     ui.show()
 else :
-    ui.message.showCritical("Please Contact K7 Team")
+    ui.message.showCritical("Please Contact K7 Team\n+201111141853")
