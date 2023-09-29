@@ -31,9 +31,10 @@ APP_TITLE = "K7 Team : Jumia"
 class Ui_MainWindow(QtWidgets.QMainWindow):
 
 
-    def __init__(self) -> None:
+    def __init__(self,manager:BackendManager) -> None:
         super().__init__()
         # Define Attributes
+        self.backend = manager
         self.message = MyMessageBox()
         self.sharingdata = SharingDataFrame(COLUMNS,self)
         self.taskscontainer  = TasksContainer(self.sharingdata)
@@ -90,10 +91,10 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.watingFrame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.watingFrame.setObjectName("watingFrame")
         #add combo box in frame 
-        self.project = QtWidgets.QComboBox(self.watingFrame)
-        self.project.setObjectName("project")
-        self.project.addItems([Vendors.We , Vendors.Etisalat])
-        self.project.move(115,7)
+        self.vendorCombobox = QtWidgets.QComboBox(self.watingFrame)
+        self.vendorCombobox.setObjectName("vendor")
+        self.vendorCombobox.addItems([Vendors.We , Vendors.Etisalat])
+        self.vendorCombobox.move(115,7)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout(self.watingFrame)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.waitingLabel = QtWidgets.QLabel(self.watingFrame)
@@ -241,12 +242,15 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
     # show function that override original method and run app methods
     def show(self) -> None:
         if self.internet.isConnect():
-            self.setupUi()
-            super().show()
-            sys.exit(APP.exec_())
+            if self.backend.isValid():
+                self.setupUi()
+                super().show()
+                sys.exit(APP.exec_())
+            else :
+                self.message.showCritical("Please Contact K7 Team\n+201111141853\n+201152083637")
         else :
             self.message.showCritical('Please Check internet Connection','Error')
-
+            
     # method to get excel path 
     def getFileDir(self):
         file_filter = 'Data File (*.xlsx );; Excel File (*.xlsx )'
@@ -298,7 +302,8 @@ manager = BackendManager(setting.getDomain(),setting.getSerialNumber())
 ui = Ui_MainWindow()
 ui.setAppIcon("Icons\JumiaIcon.ico")
 sendTMessage("Openning App")
-if manager.isValid() :
-    ui.show()
-else :
-    ui.message.showCritical("Please Contact K7 Team\n+201111141853")
+ui.show()
+
+# if manager.isValid() :
+# else :
+#     ui.message.showCritical("Please Contact K7 Team\n+201111141853")
