@@ -1,3 +1,6 @@
 *.exe
+*.xlsx
 env/
 testing.py
+Proxies.txt
+test.js
