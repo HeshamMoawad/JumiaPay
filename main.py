@@ -4,9 +4,9 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import sys , typing
 #import this below 
-from  JumiaPay.jumiaCore  import Vendors
 APP = QtWidgets.QApplication(sys.argv)
-
+from  JumiaPay.jumiaCore  import Vendors
+from proxycollector import ProxyCollector
 
 from qmodels import (
     SharingDataFrame , 
@@ -37,13 +37,18 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.backend = manager
         self.message = MyMessageBox()
         self.sharingdata = SharingDataFrame(COLUMNS,self)
-        self.taskscontainer  = TasksContainer(self.sharingdata)
+        self.proxyCollector = ProxyCollector()
         self.tableModel = MyTableModel(TABEL_MODEL_COLUMNS)
         self.internet = Checking()
         self.excelReader = ExcelReader()
-
         #add var self vendor 
         self.vendor = Vendors.We
+        self.taskscontainer  = TasksContainer(
+            sharingdata=self.sharingdata,
+            proxyCollector=self.proxyCollector,
+            vendor=self.vendor
+            )
+
 
 
     def setupUi(self):
@@ -221,8 +226,9 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
 
         self.taskscontainer.status.connect(self.statusValue.setText)
         self.taskscontainer.msg.connect(self.message.showInfo)
+        self.taskscontainer.result.connect(self.tableModel.addrow)
 
-        self.startBtn.clicked.connect(lambda : self.taskscontainer.start(10))
+        self.startBtn.clicked.connect(lambda : self.taskscontainer.start(30))
 
         self.stopBtn.clicked.connect(self.taskscontainer.stop)
         
@@ -234,9 +240,17 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.resetapp = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'), self)
         self.resetapp.activated.connect(self.reset)
 
+        self.vendorCombobox.currentTextChanged.connect(self.setVendor)
+
+        self.startBtn.setEnabled(False)
+
+        self.proxyCollector.filled.connect(lambda : self.startBtn.setEnabled(True))
+        self.proxyCollector.start(self.proxyCollector.Priority.NormalPriority)
+
         # Run ui constants
         self.setCentralWidget(self.centralwidget)
         QtCore.QMetaObject.connectSlotsByName(self)
+
 
 
     # show function that override original method and run app methods
@@ -275,7 +289,9 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.loadingWidget.setAttribute(QtCore.Qt.WidgetAttribute.WA_AlwaysStackOnTop)
         self.loadingWidget.show()
 
-
+    def setVendor(self,vendor:str):
+        self.taskscontainer.setVendor(vendor)
+        self.vendor = vendor
 
 
     def setAppIcon(self,relativePath:str):
@@ -294,14 +310,13 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.filenameValue.setText("")
         self.message.showInfo("Reset App Successfully")
 
-# if __name__ == "__main__":
+    
 
 setting = SettingReader("setting.ini")
 print(setting.getDomain(),setting.getSerialNumber())
-manager = BackendManager(setting.getDomain(),setting.getSerialNumber())
-ui = Ui_MainWindow()
+ui = Ui_MainWindow(BackendManager(setting.getDomain(),setting.getSerialNumber()))
 ui.setAppIcon("Icons\JumiaIcon.ico")
-sendTMessage("Openning App")
+# sendTMessage("Openning App")
 ui.show()
 
 # if manager.isValid() :
