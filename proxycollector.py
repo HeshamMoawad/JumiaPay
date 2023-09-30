@@ -43,8 +43,12 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
 
     Yes = 'yes'
     No = 'no'
+    HTTP = 'HTTP'
+    HTTPS = 'HTTPS'
+    
 
     def __init__(self) -> None:
+        super().__init__()
         self.Threads = []  # List Of Threads that is Working
         self.Errors = []  # Errors in https request 
         self.tempProxiesList = []
@@ -57,7 +61,7 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
             self.autoAPI(True)
             print(f"Length of Proxies is -> {len(self.tempProxiesList)}")
             self.filled.emit()
-            self.sleep(60*5)
+            self.sleep(20)
 
     def getProxy(self)-> dict :
         try :
@@ -76,16 +80,20 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
         ExportToTXT:bool= False ,
         ):
         ProxyList = []
-        response = requests.get(url = 'https://free-proxy-list.net/')
-        self.soup = BeautifulSoup(response.text,'html.parser')
-        table = self.soup.find("tbody")
+        breaked = True
+        while breaked :
+            try:
+                response = requests.get(url = 'https://free-proxy-list.net/')
+                breaked = False
+            except Exception as e: ...
+        soup = BeautifulSoup(response.text,'html.parser')
+        table = soup.find("tbody")
         rows = table.find_all("tr")
         for row in rows :
             row = row.find_all('td')
             ip = row[0].text
             port = row[1].text
             https = row[6].text
-            print(f"{ip}:{port} --> https:{https}")
             if https == httpsFilter :
                 ip_port = f"{ip}:{port}"
                 ProxyList.append(ip_port)
@@ -115,11 +123,91 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
 
     def autoAPI(self,wait:bool= True):
         self.ProxiesList.clear()
-        firstlist = self.getFreshProxyList(httpsFilter=self.Yes)
+        self.Threads.clear()
+        firstlist =  self.getFreshProxyList(self.Yes) + self.getFreshProxyList_2() + self.getFreshProxyList_5() + self.getFreshProxyList_6()
         self.threadingRequstFilter(firstlist)
         if wait == True :
             self.wait()
         self.tempProxiesList = self.ProxiesList.copy()
         return self.tempProxiesList
         
+    def getFreshProxyList_2(self):
+        ProxyList = []
+        breaked = True
+        while breaked :
+            try:
+                response = requests.get(url = 'https://www.sslproxies.org/' )
+                breaked = False
+            except Exception as e: ...
+        soup = BeautifulSoup(response.text,'html.parser')
+        table = soup.find("tbody")
+        rows = table.find_all("tr")
+        for row in rows :
+            row = row.find_all('td')
+            ip = row[0].text
+            port = row[1].text
+            https = row[6].text
+        # if https == self.Yes :
+            ip_port = f"{ip}:{port}"
+            ProxyList.append(ip_port)
+        return ProxyList
+    
+    def getFreshProxyList_3(self): # no
+        ProxyList = []
+        breaked = True
+        while breaked :
+            try:
+                response = requests.get(url = 'https://www.us-proxy.org/')
+                breaked = False
+            except Exception as e: ...
+        soup = BeautifulSoup(response.text,'html.parser')
+        table = soup.find("tbody")
+        rows = table.find_all("tr")
+        for row in rows :
+            row = row.find_all('td')
+            ip = row[0].text
+            port = row[1].text
+            https = row[6].text
+        if https == self.Yes :
+            ip_port = f"{ip}:{port}"
+            ProxyList.append(ip_port)
+        return ProxyList
 
+    def getFreshProxyList_4(self): # no
+        ProxyList = []
+        breaked = True
+        while breaked :
+            try:
+                response = requests.get(url = 'https://free-proxy-list.net/anonymous-proxy.html')
+                breaked = False
+            except Exception as e: ...
+        soup = BeautifulSoup(response.text,'html.parser')
+        table = soup.find("tbody")
+        rows = table.find_all("tr")
+        for row in rows :
+            row = row.find_all('td')
+            ip = row[0].text
+            port = row[1].text
+            https = row[6].text
+        if https == self.Yes :
+            ip_port = f"{ip}:{port}"
+            ProxyList.append(ip_port)
+        return ProxyList
+
+    def getFreshProxyList_5(self):
+        breaked = True
+        while breaked :
+            try:
+                response = requests.get(url = 'https://api.proxyscrape.com/v2/?request=getproxies&protocol=https')
+                breaked = False
+            except Exception as e: ...
+        return [ip_port for ip_port in response.text.splitlines()]
+
+    def getFreshProxyList_6(self):
+        breaked = True
+        while breaked :
+            try:
+                response = requests.get(url = 'https://api.proxyscrape.com/v2/?request=getproxies&protocol=http')
+                breaked = False
+            except Exception as e: ...
+        return [f"{ip_port}" for ip_port in response.text.splitlines()]
