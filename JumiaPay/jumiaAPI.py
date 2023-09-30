@@ -16,6 +16,7 @@ from .jumiaCore import (
     Flags ,
     ContentLength
 )
+from .exceptions import IPAddressBanned
 ####################################################
 
 # MIT License
@@ -91,8 +92,8 @@ class JumiaPay(Requests):
             PhoneNumber = PhoneNumber,
         )
 
-    def getAccount(self, AreaCode :str, PhoneNumber:str, proxy=None, userAgent=None )-> list:
-        response = self.sendRequest(AreaCode,PhoneNumber,proxy,userAgent)
+    def getAccount(self, AreaCode :str, PhoneNumber:str, proxy=None)-> list:
+        response = self.sendRequest(AreaCode,PhoneNumber,proxy,self.gen.getRandomUserAgent())
         jsonData = response.json() if response.status_code != 429 else {}
         if response.status_code == 200 :
             if 'elements' in jsonData['response'].keys() :
@@ -107,6 +108,7 @@ class JumiaPay(Requests):
             else :
                 serverMsg = str(jsonData)
         elif response.status_code == 429 :
+            raise IPAddressBanned
             serverMsg = "IP Address Have Banned"
         else :
             serverMsg = response.text
