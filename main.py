@@ -96,10 +96,11 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.watingFrame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.watingFrame.setObjectName("watingFrame")
         #add combo box in frame 
-        self.vendorCombobox = QtWidgets.QComboBox(self.watingFrame)
+        self.vendorCombobox = QtWidgets.QComboBox(self.centralwidget)
         self.vendorCombobox.setObjectName("vendor")
         self.vendorCombobox.addItems([Vendors.We , Vendors.Etisalat])
-        self.vendorCombobox.move(115,7)
+        # self.vendorCombobox.move(20,1)
+        self.vendorCombobox.setGeometry(330, 30, 100, 30)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout(self.watingFrame)
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.waitingLabel = QtWidgets.QLabel(self.watingFrame)
@@ -197,8 +198,8 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         # set window title 
         self.setWindowTitle(APP_TITLE)
         # rename Labels 
-        self.filenameLabel.setText("File Name :")
-        self.filenameValue.setText(" ")
+        # self.filenameLabel.setText("File Name :")
+        # self.filenameValue.setText(" ")
 
         self.waitingLabel.setText("Waiting :")
         self.waitingValue.setText("0")
