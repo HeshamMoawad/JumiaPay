@@ -12,6 +12,7 @@ from qmodels import (
 )
 from proxycollector import ProxyCollector
 from JumiaPay import JumiaPay
+import requests , json
 
 def row(row)->dict:
     areacode = str(int(float(row[0])))
@@ -39,21 +40,29 @@ class Task(QThread):
     def run(self) -> None: 
         self.jumia = JumiaPay(self.__vendor)
         while not self.sharingdata.empty and not self.__stop  :
-            try :
+            # try :
                 while not self.sharingdata.empty and not self.__stop  :
+                    self.searchFor()
                     if self.sharingdata.empty :
                         self.__stop = True
+                    
+            # except Exception as e :
+            #     print(f"{self.__str__()} Will Stop For - {e}")
+            #     self.__stop = True
 
-                    resault = self.jumia.getAccount(**row(self.sharingdata.get_row()),proxy=self.proxiesCollector.getProxy())
-                    print(resault)
-                    self.result.emit(resault)
-            except ConnectionError as ce :
-                print(ce)
-                if not self.checker.isConnect() :
-                    self.__stop = True
-            except Exception as e :
-                print(e)
-                self.__stop = True
+    def searchFor(self):
+        research = True
+        rowdata = row(self.sharingdata.get_row())
+        while research :
+            try :
+                resault = self.jumia.getAccount(**rowdata,proxy=self.proxiesCollector.getProxy())
+                print(resault)
+                self.result.emit(resault)
+                research = False
+            except Exception as e : 
+                #print(e)
+                ...
+
 
 
     def __str__(self) -> str:
@@ -81,12 +90,12 @@ class TasksContainer(QObject):
     result = pyqtSignal(list)
 
 
-    def __init__(self,sharingdata:SharingDataFrame,proxiesCollector:ProxyCollector,vendor:str,**kwargs) -> None:
+    def __init__(self,sharingdata:SharingDataFrame,proxyCollector:ProxyCollector,vendor:str,**kwargs) -> None:
         super().__init__()
         self.__tasks:typing.List[Task]= []
         self.sharingdata = sharingdata
         self.checker = Checking()
-        self.proxiesCollector = proxiesCollector
+        self.proxyCollector = proxyCollector
         self.setVendor(vendor)
 
     @property
@@ -100,7 +109,7 @@ class TasksContainer(QObject):
                     max = self.sharingdata.rowCount()
                 for _ in range(max):
                     print(f"Running {_}")
-                    task = Task(self , self.sharingdata, self.proxiesCollector)
+                    task = Task(self , self.sharingdata, self.__vendor ,self.proxyCollector)
                     task.finished.connect(lambda : self.status.emit("OFF "))
                     task.result.connect(self.result.emit)
                     self.__tasks.append(task)
@@ -122,3 +131,4 @@ class TasksContainer(QObject):
 
     def setVendor(self,vendor:str):
         self.__vendor = vendor
+        print(vendor)
