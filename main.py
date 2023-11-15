@@ -41,7 +41,6 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.tableModel = MyTableModel(TABEL_MODEL_COLUMNS)
         self.internet = Checking()
         self.excelReader = ExcelReader()
-        #add var self vendor 
         self.vendor = Vendors.We
         self.taskscontainer  = TasksContainer(
             sharingdata=self.sharingdata,

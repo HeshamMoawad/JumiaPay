@@ -4,7 +4,8 @@ import requests , random
 from bs4 import BeautifulSoup
 from PyQt5.QtCore import  QThread , pyqtSignal
 
-
+from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
 
 ####################################################
 
@@ -97,21 +98,30 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
             if https == httpsFilter :
                 ip_port = f"{ip}:{port}"
                 ProxyList.append(ip_port)
-        if ExportToTXT == True :
-            with open("Proxies.txt",'w+')as file :
-                file.writelines([ip_port+"\n" for ip_port in ProxyList])
-                file.close()
+        # if ExportToTXT == True :
+        #     with open("Proxies.txt",'w+')as file :
+        #         file.writelines([ip_port+"\n" for ip_port in ProxyList])
+        #         file.close()
         return ProxyList
 
-    def testProxy(self,ip_port):
-        try:
-            response = requests.get(url = "http://httpbin.org/ip",proxies= self.__getProxyDict(ip_port) ,timeout = 6)
-            self.ProxiesList.append(ip_port)
-        except Exception as e :
-            self.Errors.append(e)
+    def testProxy(self,ip_port_list:list):
+        for ip_port in ip_port_list :
+            print(ip_port)
+            try:
+                response = requests.get(url = "http://httpbin.org/ip",proxies= self.__getProxyDict(ip_port) ,timeout = 6)
+                self.ProxiesList.append(ip_port)
+            except Exception as e :
+                self.Errors.append(e)
+
 
     def threadingRequstFilter(self,ip_portLists):
-        for iplist in ip_portLists:
+        # with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor :
+        #     self.futures = [executor.submit(self.testProxy, ip_port) for ip_port in ip_portLists]
+        # for f in self.futures :
+        #     result = f.result()
+        #     print(result)
+        array_of_lists = np.array_split(ip_portLists,200)
+        for iplist in array_of_lists:
             task = thr.Thread(target = self.testProxy,args = (iplist,))
             self.Threads.append(task)
             task.start()
@@ -124,7 +134,7 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
     def autoAPI(self,wait:bool= True):
         self.ProxiesList.clear()
         self.Threads.clear()
-        firstlist =  self.getFreshProxyList(self.Yes) + self.getFreshProxyList_2() + self.getFreshProxyList_5() + self.getFreshProxyList_6()
+        firstlist =  self.getFreshProxyList(self.Yes) + self.getFreshProxyList_2() + self.getFreshProxyList_6()
         self.threadingRequstFilter(firstlist)
         if wait == True :
             self.wait()

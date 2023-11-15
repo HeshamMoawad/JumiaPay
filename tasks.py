@@ -60,7 +60,7 @@ class Task(QThread):
                 self.result.emit(resault)
                 research = False
             except Exception as e : 
-                #print(e)
+                print(e)
                 ...
 
 
