@@ -79,10 +79,10 @@ class JumiaPay(Requests):
         payload['payload']['phone_number'] = f"EG_+20{AreaCode}{PhoneNumber}"
         return payload
 
-    def sendRequest(self, AreaCode :str , PhoneNumber:str ,proxy=None, userAgent=None )-> NewResponse:
+    def sendRequest(self, AreaCode :str , PhoneNumber:str ,proxy=None, userAgent=None ,timeout = 6)-> NewResponse:
         self.updateHeaders({'user-agent':userAgent}) if userAgent != None else None
         return self.post(
-            timeout = 15 ,
+            timeout = 6 ,
             json = self.getPayload(
                 AreaCode = AreaCode , 
                 PhoneNumber = PhoneNumber ,
@@ -92,8 +92,8 @@ class JumiaPay(Requests):
             PhoneNumber = PhoneNumber,
         )
 
-    def getAccount(self, AreaCode :str, PhoneNumber:str, proxy=None)-> list:
-        response = self.sendRequest(AreaCode,PhoneNumber,proxy,self.gen.getRandomUserAgent())
+    def getAccount(self, AreaCode :str, PhoneNumber:str, proxy=None,timeout:int = 6)-> list:
+        response = self.sendRequest(AreaCode,PhoneNumber,proxy,self.gen.getRandomUserAgent(),timeout)
         jsonData = response.json() if response.status_code != 429 else {}
         if response.status_code == 200 :
             if 'elements' in jsonData['response'].keys() :
@@ -108,8 +108,8 @@ class JumiaPay(Requests):
             else :
                 serverMsg = str(jsonData)
         elif response.status_code == 429 :
-            raise IPAddressBanned
             serverMsg = "IP Address Have Banned"
+            raise IPAddressBanned
         else :
             serverMsg = response.text
         return [response.AreaCode,response.PhoneNumber,serverMsg]

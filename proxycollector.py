@@ -1,9 +1,10 @@
 import threading as thr
 import numpy as np
-import requests , random
+import requests , random , typing
 from bs4 import BeautifulSoup
 from PyQt5.QtCore import  QThread , pyqtSignal
-
+from JumiaPay import JumiaPay
+from qmodels import MyTableModel
 
 
 ####################################################
@@ -36,6 +37,77 @@ from PyQt5.QtCore import  QThread , pyqtSignal
 # Whatsapp : +201111141853
 
 ####################################################
+def row(row)->dict:
+    areacode = str(int(float(row[0])))
+    if not (2 >= len(areacode) > 0 ):
+        areacode = f"0{areacode}"
+    return {
+        'AreaCode' : areacode ,
+        'PhoneNumber' : str(int(float(row[1]))),
+    }
+
+
+class Worker(QThread):
+    def __init__(self , max:int ,sharingdata , vendor  , model:MyTableModel , proxycollector:'ProxyCollector', timeout :int = 5 ) -> None:
+        super().__init__()
+        self.sharingdata = sharingdata
+        self.model = model
+        self.max = max
+        self.Threads:typing.List[thr.Thread] = []  # List Of Threads that is Working
+        self.Errors = []  # Errors in https request 
+        self.__stop = False
+        self.proxycollector = proxycollector
+        self.jumia = JumiaPay(vendor)
+        self.timeout = timeout
+
+    def run(self) -> None:
+        self.autoAPI(True)
+
+    def testProxy(self):
+        while not self.sharingdata.empty  and not self.__stop :
+            research = True
+            rowdata = row(self.sharingdata.get_row())
+            while research and not self.__stop  :
+                try :
+                    resault = self.jumia.getAccount(**rowdata,proxy=self.proxycollector.getProxy(), timeout=self.timeout)
+                    print(resault)
+                    self.model.addrow(resault)
+                    research = False
+                except Exception as e : 
+                    # print(e)
+                    ...
+
+    def threadingRequstFilter(self):
+        for _ in range(self.max):
+            task = thr.Thread(target = self.testProxy)
+            self.Threads.append(task)
+            task.start()
+
+    def wait(self)-> None:
+        for task in self.Threads:
+            if task.is_alive() :
+                task.join()
+        self.Threads.clear()
+
+    def autoAPI(self,wait:bool= True):
+        self.Threads.clear()
+        self.threadingRequstFilter()
+        if wait == True :
+            self.wait()
+
+    def stop(self):
+        self.__stop = True
+
+    def start(self, priority: QThread.Priority = ...) -> None:
+        if not self.Threads :
+            self.__stop = False
+            return super().start(priority)
+        
+    def setVendor(self,vendor:str):
+        self.jumia = JumiaPay(vendor)
+
+    
+
 
 class ProxyCollector(QThread): # From  https://free-proxy-list.net/ 
     status = pyqtSignal(str)
@@ -45,32 +117,36 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
     No = 'no'
     HTTP = 'HTTP'
     HTTPS = 'HTTPS'
-    
+    class Source:
+        S1 = 's1'
+        S2 = 's2'
+        S3 = 's3'
+        S4 = 's4'
 
-    def __init__(self) -> None:
+    def __init__(self , waiting:int ,source:Source) -> None:
         super().__init__()
-        self.Threads = []  # List Of Threads that is Working
-        self.Errors = []  # Errors in https request 
-        self.tempProxiesList = []
         self.ProxiesList = [] # Good Proxies
         self.__stop = False
         self.__proxiesIndex = 0
+        self.waiting = waiting
+        self.source = source
+
         
     def run(self) -> None:
-        while not self.__stop :
-            self.autoAPI(True)
-            print(f"Length of Proxies is -> {len(self.tempProxiesList)}")
+        while True :
+            self.fill()
             self.filled.emit()
-            self.sleep(20)
+            self.sleep(self.waiting)
 
     def getProxy(self)-> dict :
         try :
-            ip_port = self.tempProxiesList[self.__proxiesIndex]
-            self.__proxiesIndex = int(self.__proxiesIndex+1) if self.__proxiesIndex <= len(self.tempProxiesList)-2 else 0
+            ip_port = self.ProxiesList[self.__proxiesIndex]
+            self.__proxiesIndex = int(self.__proxiesIndex+1) if self.__proxiesIndex <= len(self.ProxiesList)-2 else 0
             return self.__getProxyDict(ip_port=ip_port)
         except Exception as e :
-            return self.__getProxyDict(ip_port=random.choice(self.tempProxiesList))
-    
+            print(f"Error from getting proxy ==> {e}")
+            return self.__getProxyDict(ip_port=random.choice(self.ProxiesList))
+        
     def __getProxyDict(self,ip_port):
         return {'http':ip_port,'https':ip_port}
 
@@ -102,34 +178,6 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
                 file.writelines([ip_port+"\n" for ip_port in ProxyList])
                 file.close()
         return ProxyList
-
-    def testProxy(self,ip_port):
-        try:
-            response = requests.get(url = "http://httpbin.org/ip",proxies= self.__getProxyDict(ip_port) ,timeout = 6)
-            self.ProxiesList.append(ip_port)
-        except Exception as e :
-            self.Errors.append(e)
-
-    def threadingRequstFilter(self,ip_portLists):
-        for iplist in ip_portLists:
-            task = thr.Thread(target = self.testProxy,args = (iplist,))
-            self.Threads.append(task)
-            task.start()
-
-    def wait(self)-> None:
-        for task in self.Threads:
-            if task.is_alive() :
-                task.join()
-
-    def autoAPI(self,wait:bool= True):
-        self.ProxiesList.clear()
-        self.Threads.clear()
-        firstlist =  self.getFreshProxyList(self.Yes) + self.getFreshProxyList_2() + self.getFreshProxyList_5() + self.getFreshProxyList_6()
-        self.threadingRequstFilter(firstlist)
-        if wait == True :
-            self.wait()
-        self.tempProxiesList = self.ProxiesList.copy()
-        return self.tempProxiesList
         
     def getFreshProxyList_2(self):
         ProxyList = []
@@ -211,3 +259,20 @@ class ProxyCollector(QThread): # From  https://free-proxy-list.net/
                 breaked = False
             except Exception as e: ...
         return [f"{ip_port}" for ip_port in response.text.splitlines()]
+
+    def fill(self): 
+        if self.source == self.Source.S1 :
+            firstlist =  self.getFreshProxyList(self.Yes) #+ self.getFreshProxyList_2() + self.getFreshProxyList_5() + self.getFreshProxyList_6()
+        elif self.source == self.Source.S2 :
+            firstlist =  self.getFreshProxyList_2() #+ self.getFreshProxyList_5() + self.getFreshProxyList_6()
+        elif self.source == self.Source.S3 :
+            firstlist =  self.getFreshProxyList_5() #+ self.getFreshProxyList_6()
+        elif self.source == self.Source.S4 :
+            firstlist =  self.getFreshProxyList_6()
+        else :
+            firstlist = self.getFreshProxyList(self.Yes) + self.getFreshProxyList_2() + self.getFreshProxyList_5() + self.getFreshProxyList_6()
+        # firstlist = ... #self.getFreshProxyList(self.Yes) + self.getFreshProxyList_2() + self.getFreshProxyList_5() + self.getFreshProxyList_6()
+        self.ProxiesList.clear()
+        self.ProxiesList += firstlist
+        print(f"Get in {self.source} --> {len(self.ProxiesList)}")
+

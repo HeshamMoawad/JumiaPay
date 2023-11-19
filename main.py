@@ -6,7 +6,7 @@ import sys , typing
 #import this below 
 APP = QtWidgets.QApplication(sys.argv)
 from  JumiaPay.jumiaCore  import Vendors
-from proxycollector import ProxyCollector
+from proxycollector import ProxyCollector , Worker
 
 from qmodels import (
     SharingDataFrame , 
@@ -37,17 +37,48 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.backend = manager
         self.message = MyMessageBox()
         self.sharingdata = SharingDataFrame(COLUMNS,self)
-        self.proxyCollector = ProxyCollector()
         self.tableModel = MyTableModel(TABEL_MODEL_COLUMNS)
         self.internet = Checking()
         self.excelReader = ExcelReader()
         #add var self vendor 
         self.vendor = Vendors.We
-        self.taskscontainer  = TasksContainer(
-            sharingdata=self.sharingdata,
-            proxyCollector=self.proxyCollector,
-            vendor=self.vendor
-            )
+        self.proxyCollector_1 = ProxyCollector(30, ProxyCollector.Source.S1)
+        self.worker_1 = Worker(
+            10,
+            self.sharingdata ,
+            self.vendor,
+            self.tableModel , 
+            self.proxyCollector_1 ,
+            timeout =  3 ,
+        )
+        self.proxyCollector_2 = ProxyCollector(30, ProxyCollector.Source.S2)
+        self.worker_2 = Worker(
+            20,
+            self.sharingdata ,
+            self.vendor,
+            self.tableModel , 
+            self.proxyCollector_2 ,
+            timeout =  3 ,
+        )
+        self.proxyCollector_3 = ProxyCollector(30, ProxyCollector.Source.S3)
+        self.worker_3 = Worker(
+            50,
+            self.sharingdata ,
+            self.vendor,
+            self.tableModel , 
+            self.proxyCollector_3 ,
+            timeout =  3 ,
+        )
+        self.proxyCollector_4 = ProxyCollector(30, ProxyCollector.Source.S4)
+        self.worker_4 = Worker(
+            50,
+            self.sharingdata ,
+            self.vendor,
+            self.tableModel , 
+            self.proxyCollector_4 ,
+            timeout =  3 ,
+        )
+
 
 
 
@@ -225,13 +256,22 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
 
         self.sharingdata.lengthChanged.connect(lambda x :self.waitingValue.setText(str(x)))
 
-        self.taskscontainer.status.connect(self.statusValue.setText)
-        self.taskscontainer.msg.connect(self.message.showInfo)
-        self.taskscontainer.result.connect(self.tableModel.addrow)
+        # self.taskscontainer.status.connect(self.statusValue.setText)
+        # self.taskscontainer.msg.connect(self.message.showInfo)
+        # self.taskscontainer.result.connect(self.tableModel.addrow)
 
-        self.startBtn.clicked.connect(lambda : self.taskscontainer.start(30))
+        self.startBtn.clicked.connect(self.worker_1.start)
+        self.stopBtn.clicked.connect(self.worker_1.stop)
 
-        self.stopBtn.clicked.connect(self.taskscontainer.stop)
+        self.startBtn.clicked.connect(self.worker_2.start)
+        self.stopBtn.clicked.connect(self.worker_2.stop)
+
+        self.startBtn.clicked.connect(self.worker_3.start)
+        self.stopBtn.clicked.connect(self.worker_3.stop)
+
+        self.startBtn.clicked.connect(self.worker_4.start)
+        self.stopBtn.clicked.connect(self.worker_4.stop)
+
         
         self.tableModel.lengthChanged.connect(lambda x : self.CounterValue.setText(str(x)))
         self.tableModel.message.connect(self.message.showInfo)
@@ -245,8 +285,18 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
 
         self.startBtn.setEnabled(False)
 
-        self.proxyCollector.filled.connect(lambda : self.startBtn.setEnabled(True))
-        self.proxyCollector.start(self.proxyCollector.Priority.NormalPriority)
+        self.proxyCollector_1.filled.connect(lambda : self.startBtn.setEnabled(True))
+        self.proxyCollector_1.start(self.proxyCollector_1.Priority.NormalPriority)
+
+        self.proxyCollector_2.filled.connect(lambda : self.startBtn.setEnabled(True))
+        self.proxyCollector_2.start(self.proxyCollector_2.Priority.NormalPriority)
+
+        self.proxyCollector_3.filled.connect(lambda : self.startBtn.setEnabled(True))
+        self.proxyCollector_3.start(self.proxyCollector_3.Priority.NormalPriority)
+
+        self.proxyCollector_4.filled.connect(lambda : self.startBtn.setEnabled(True))
+        self.proxyCollector_4.start(self.proxyCollector_4.Priority.NormalPriority)
+
 
         # Run ui constants
         self.setCentralWidget(self.centralwidget)
@@ -291,7 +341,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.loadingWidget.show()
 
     def setVendor(self,vendor:str):
-        self.taskscontainer.setVendor(vendor)
+        # self.taskscontainer.setVendor(vendor)
         self.vendor = vendor
 
 

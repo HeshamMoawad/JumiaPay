@@ -40,15 +40,11 @@ class Task(QThread):
     def run(self) -> None: 
         self.jumia = JumiaPay(self.__vendor)
         while not self.sharingdata.empty and not self.__stop  :
-            # try :
-                while not self.sharingdata.empty and not self.__stop  :
-                    self.searchFor()
-                    if self.sharingdata.empty :
-                        self.__stop = True
+            while not self.sharingdata.empty and not self.__stop  :
+                self.searchFor()
+                if self.sharingdata.empty :
+                    self.__stop = True
                     
-            # except Exception as e :
-            #     print(f"{self.__str__()} Will Stop For - {e}")
-            #     self.__stop = True
 
     def searchFor(self):
         research = True
